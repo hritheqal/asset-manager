@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Building2, LayoutDashboard, Package } from 'lucide-react';
+import { Building2, LayoutDashboard, Package, ClipboardList } from 'lucide-react';
 
 export default function Navbar() {
     return (
@@ -32,6 +32,13 @@ export default function Navbar() {
                             >
                                 <Building2 className="mr-2 h-4 w-4" />
                                 Buildings
+                            </Link>
+                            <Link
+                                href="/sparta"
+                                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                            >
+                                <ClipboardList className="mr-2 h-4 w-4" />
+                                SPARTA
                             </Link>
                         </div>
                     </div>
