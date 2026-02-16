@@ -20,7 +20,7 @@ interface FilterState {
   status: string;
 }
 
-export default function SpartPage() {
+export default function SpartaPage() {
     const [activeTab, setActiveTab] = useState('da5');
     const supabase = createClient();
 
