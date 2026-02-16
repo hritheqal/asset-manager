@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ClipboardList, FileText, ExternalLink, List, Eye, Filter } from 'lucide-react';
+import { ClipboardList, FileText, BookOpen, ExternalLink, List, Eye, Filter } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { DA5Registration } from '@/lib/types';
+import { DA5Registration, DA6Registration } from '@/lib/types';
 
 // Filter state interface
 interface FilterState {
@@ -26,7 +26,16 @@ export default function SpartaPage() {
 
     // Records section state
     const [da5Records, setDa5Records] = useState<DA5Registration[]>([]);
+    const [da6Records, setDa6Records] = useState<DA6Registration[]>([]);
     const [loadingRecords, setLoadingRecords] = useState(false);
+    const [da6Filters, setDa6Filters] = useState({
+        building: '',
+        asset: '',
+        status: '',
+        filledBy: '',
+        officer: '',
+        recordStatus: '',
+    });
     const [filters, setFilters] = useState<FilterState>({
         building: '',
         locationType: '',
@@ -43,15 +52,21 @@ export default function SpartaPage() {
 
     const tabs = [
         { id: 'da5', label: 'DA5', icon: FileText },
+        { id: 'da6', label: 'DA6', icon: BookOpen },
     ];
 
     const openDA5Form = () => {
         window.open('/sparta/da5', '_blank');
     };
 
+    const openDA6Form = () => {
+        window.open('/sparta/da6', '_blank');
+    };
+
     // Load DA5 records on mount
     useEffect(() => {
         loadDA5Records();
+        loadDA6Records();
     }, []);
 
     const loadDA5Records = async () => {
@@ -64,11 +79,32 @@ export default function SpartaPage() {
                     building:buildings(name)
                 `)
                 .order('created_at', { ascending: false });
-            
+
             if (error) throw error;
             setDa5Records(data || []);
         } catch (error) {
             console.error('Error loading DA5 records:', error);
+        } finally {
+            setLoadingRecords(false);
+        }
+    };
+
+    const loadDA6Records = async () => {
+        setLoadingRecords(true);
+        try {
+            const { data, error } = await supabase
+                .from('da6_registrations')
+                .select(`
+                    *,
+                    building:buildings(name),
+                    asset:assets(name)
+                `)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setDa6Records(data || []);
+        } catch (error) {
+            console.error('Error loading DA6 records:', error);
         } finally {
             setLoadingRecords(false);
         }
@@ -79,9 +115,13 @@ export default function SpartaPage() {
         setFilters(prev => ({ ...prev, [field]: value }));
     };
 
+    const handleDA6FilterChange = (field: keyof typeof da6Filters, value: string) => {
+        setDa6Filters(prev => ({ ...prev, [field]: value }));
+    };
+
     const filteredRecords = da5Records.filter(record => {
         const buildingName = (record.building as any)?.name || '';
-        
+
         return (
             (!filters.building || buildingName.toLowerCase().includes(filters.building.toLowerCase())) &&
             (!filters.locationType || record.location_type === filters.locationType) &&
@@ -97,8 +137,26 @@ export default function SpartaPage() {
         );
     });
 
+    const filteredDA6Records = da6Records.filter(record => {
+        const buildingName = (record.building as any)?.name || '';
+        const assetName = (record.asset as any)?.name || '';
+
+        return (
+            (!da6Filters.building || buildingName.toLowerCase().includes(da6Filters.building.toLowerCase())) &&
+            (!da6Filters.asset || assetName.toLowerCase().includes(da6Filters.asset.toLowerCase())) &&
+            (!da6Filters.status || record.status === da6Filters.status) &&
+            (!da6Filters.filledBy || (record.filled_by_name || '').toLowerCase().includes(da6Filters.filledBy.toLowerCase())) &&
+            (!da6Filters.officer || (record.officer_name || '').toLowerCase().includes(da6Filters.officer.toLowerCase())) &&
+            (!da6Filters.recordStatus || record.status_record === da6Filters.recordStatus)
+        );
+    });
+
     const openRecordDetail = (recordId: string) => {
         window.open(`/sparta/da5record/${recordId}`, '_blank');
+    };
+
+    const openDA6RecordDetail = (recordId: string) => {
+        window.open(`/sparta/da6record/${recordId}`, '_blank');
     };
 
     const clearFilters = () => {
@@ -114,6 +172,17 @@ export default function SpartaPage() {
             filledBy: '',
             officer: '',
             status: '',
+        });
+    };
+
+    const clearDA6Filters = () => {
+        setDa6Filters({
+            building: '',
+            asset: '',
+            status: '',
+            filledBy: '',
+            officer: '',
+            recordStatus: '',
         });
     };
 
@@ -432,6 +501,245 @@ export default function SpartaPage() {
                                                             <button
                                                                 onClick={() => openRecordDetail(record.id)}
                                                                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                                            >
+                                                                <Eye className="h-3 w-3 mr-1" />
+                                                                View
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {activeTab === 'da6' && (
+                    <>
+                        {/* DA6 Registration Section */}
+                        <div className="rounded-lg bg-white shadow">
+                            <div className="px-4 py-5 sm:p-6">
+                                <div className="flex items-center space-x-3">
+                                    <BookOpen className="h-8 w-8 text-emerald-600" />
+                                    <div>
+                                        <h3 className="text-lg font-medium leading-6 text-gray-900">
+                                            DA6 Equipment Registration
+                                        </h3>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            Equipment and Asset Registration Form
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-6 border-t border-gray-100 pt-6">
+                                    <div className="bg-gray-50 rounded-lg p-6">
+                                        <h4 className="text-sm font-medium text-gray-900 mb-3">
+                                            About DA6 Form
+                                        </h4>
+                                        <ul className="text-sm text-gray-600 space-y-2 mb-6">
+                                            <li>• Register equipment and assets in buildings</li>
+                                            <li>• Track asset status and quantity</li>
+                                            <li>• Record measurements and specifications</li>
+                                            <li>• Capture GPS coordinates for location tracking</li>
+                                            <li>• Upload photos for documentation</li>
+                                            <li>• Submit for approval workflow</li>
+                                        </ul>
+                                        <button
+                                            onClick={openDA6Form}
+                                            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                                        >
+                                            <ExternalLink className="h-5 w-5 mr-2" />
+                                            Open DA6 Registration Form
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* DA6 Records Section */}
+                        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                            <div className="bg-emerald-600 px-6 py-4">
+                                <h2 className="text-lg font-semibold text-white flex items-center">
+                                    <List className="h-5 w-5 mr-2" />
+                                    Registered DA6 Records
+                                </h2>
+                            </div>
+                            <div className="p-6">
+                                {/* Filters */}
+                                <div className="mb-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Filter className="h-5 w-5 text-gray-600" />
+                                        <h3 className="text-sm font-medium text-gray-900">Filter Records</h3>
+                                        <button
+                                            onClick={clearDA6Filters}
+                                            className="ml-auto text-sm text-emerald-600 hover:text-emerald-800"
+                                        >
+                                            Clear All Filters
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Building</label>
+                                            <input
+                                                type="text"
+                                                value={da6Filters.building}
+                                                onChange={(e) => handleDA6FilterChange('building', e.target.value)}
+                                                placeholder="Search building..."
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Asset</label>
+                                            <input
+                                                type="text"
+                                                value={da6Filters.asset}
+                                                onChange={(e) => handleDA6FilterChange('asset', e.target.value)}
+                                                placeholder="Search asset..."
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                                            <select
+                                                value={da6Filters.status}
+                                                onChange={(e) => handleDA6FilterChange('status', e.target.value)}
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            >
+                                                <option value="">All Status</option>
+                                                <option value="Active">Active</option>
+                                                <option value="Damaged">Damaged</option>
+                                                <option value="Inactive">Inactive</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Filled By</label>
+                                            <input
+                                                type="text"
+                                                value={da6Filters.filledBy}
+                                                onChange={(e) => handleDA6FilterChange('filledBy', e.target.value)}
+                                                placeholder="Search filled by..."
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Officer</label>
+                                            <input
+                                                type="text"
+                                                value={da6Filters.officer}
+                                                onChange={(e) => handleDA6FilterChange('officer', e.target.value)}
+                                                placeholder="Search officer..."
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Record Status</label>
+                                            <select
+                                                value={da6Filters.recordStatus}
+                                                onChange={(e) => handleDA6FilterChange('recordStatus', e.target.value)}
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            >
+                                                <option value="">All Status</option>
+                                                <option value="draft">Draft</option>
+                                                <option value="submitted">Submitted</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Records Count */}
+                                <div className="mb-4 flex items-center justify-between">
+                                    <p className="text-sm text-gray-600">
+                                        Showing <span className="font-medium">{filteredDA6Records.length}</span> of <span className="font-medium">{da6Records.length}</span> records
+                                    </p>
+                                    <button
+                                        onClick={loadDA6Records}
+                                        disabled={loadingRecords}
+                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
+                                    >
+                                        {loadingRecords && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-600 mr-2"></div>}
+                                        Refresh
+                                    </button>
+                                </div>
+
+                                {/* Records Table */}
+                                <div className="overflow-x-auto border rounded-lg">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Building</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Measurement</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filled By</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Officer</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Record Status</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {loadingRecords ? (
+                                                <tr>
+                                                    <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
+                                                        <div className="flex items-center justify-center">
+                                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600 mr-2"></div>
+                                                            Loading records...
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : filteredDA6Records.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
+                                                        No records found. {da6Records.length > 0 && 'Try adjusting your filters.'}
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                filteredDA6Records.map((record, index) => (
+                                                    <tr key={record.id} className="hover:bg-gray-50">
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                            {(record.building as any)?.name || 'N/A'}
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                            {(record.asset as any)?.name || 'N/A'}
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                                                record.status === 'Active'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : record.status === 'Damaged'
+                                                                    ? 'bg-red-100 text-red-800'
+                                                                    : 'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                                {record.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{record.quantity}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                            {record.measurement_value ? `${record.measurement_value} ${record.measurement_unit || ''}` : '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{record.filled_by_name}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{record.officer_name}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                                                record.status_record === 'submitted'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : 'bg-yellow-100 text-yellow-800'
+                                                            }`}>
+                                                                {record.status_record}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                            {new Date(record.created_at || '').toLocaleDateString()}
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                                            <button
+                                                                onClick={() => openDA6RecordDetail(record.id)}
+                                                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                                                             >
                                                                 <Eye className="h-3 w-3 mr-1" />
                                                                 View
