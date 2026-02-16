@@ -208,10 +208,13 @@ export default function DA5RegistrationPage() {
     setStatus({ type: 'info', message: 'Checking email...' });
 
     try {
+      // Normalize email to prevent wildcard injection attacks
+      const normalizedEmail = onBehalfEmail.trim().toLowerCase();
+      
       const { data: existingUsers } = await supabase
         .from('users')
         .select('email, name, position')
-        .ilike('email', onBehalfEmail)
+        .eq('email', normalizedEmail)
         .limit(1);
 
       if (existingUsers && existingUsers.length > 0) {

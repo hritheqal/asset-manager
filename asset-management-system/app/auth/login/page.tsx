@@ -148,12 +148,9 @@ export default function LoginPage() {
               </div>
 
               <div className="text-sm">
-                <Link
-                  href="#"
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
-                >
+                <span className="font-medium text-indigo-600">
                   Forgot your password?
-                </Link>
+                </span>
               </div>
             </div>
 
