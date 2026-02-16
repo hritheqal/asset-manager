@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Building2, Package, ArrowRight } from 'lucide-react';
+import { Building2, Package, ArrowRight, ClipboardList } from 'lucide-react';
 
 export default function Home() {
     return (
@@ -13,6 +13,25 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {/* DA5 Card */}
+                <div className="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400">
+                    <div className="flex-shrink-0">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50">
+                            <ClipboardList className="h-6 w-6 text-indigo-700" aria-hidden="true" />
+                        </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <Link href="/sparta" className="focus:outline-none">
+                            <span className="absolute inset-0" aria-hidden="true" />
+                            <p className="text-sm font-medium text-gray-900">DA5</p>
+                            <p className="truncate text-sm text-gray-500">SPARTA - Sistem Pendaftaran Aset</p>
+                        </Link>
+                    </div>
+                    <div className="flex-shrink-0">
+                        <ArrowRight className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                    </div>
+                </div>
+
                 {/* Assets Card */}
                 <div className="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 hover:border-gray-400">
                     <div className="flex-shrink-0">
