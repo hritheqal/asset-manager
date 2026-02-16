@@ -343,8 +343,21 @@ export default function DA5RegistrationPage() {
 
     // Building info
     if (!formData.building_id) errors.push('Please select a building');
-    if (!formData.floor) errors.push('Please select a floor');
-    if (!formData.block_name) errors.push('Please select a block');
+
+    // Location-specific validation
+    if (formData.location_type === 'EXTERNAL') {
+      if (!formData.external_building_name) {
+        errors.push('Please provide the external building name');
+      }
+    } else {
+      // BLOCK type - only require floor/block if options are available
+      if (selectedBuildingFloors.length > 0 && !formData.floor) {
+        errors.push('Please select a floor');
+      }
+      if (selectedBuildingBlocks.length > 0 && !formData.block_name) {
+        errors.push('Please select a block');
+      }
+    }
 
     if (errors.length > 0) {
       setStatus({ type: 'error', message: errors.join('. ') });
@@ -666,6 +679,22 @@ export default function DA5RegistrationPage() {
                   </label>
                 </div>
               </div>
+
+              {/* External Building Name - only shown when EXTERNAL is selected */}
+              {formData.location_type === 'EXTERNAL' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    External Building Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.external_building_name || ''}
+                    onChange={(e) => handleInputChange('external_building_name', e.target.value)}
+                    placeholder="Enter external building name"
+                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
+                  />
+                </div>
+              )}
 
               {/* Building Selection */}
               <div>
