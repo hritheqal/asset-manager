@@ -76,12 +76,12 @@ export default function DA5RecordDetailPage() {
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
           <p className="mt-4 text-gray-600">{error || 'Record not found'}</p>
-          <Link 
-            href="/sparta/da5" 
+          <Link
+            href="/sparta"
             className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-800"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to DA5 Form
+            Back to Records List
           </Link>
         </div>
       </div>
@@ -95,12 +95,12 @@ export default function DA5RecordDetailPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/sparta/da5" 
+          <Link
+            href="/sparta"
             className="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to DA5 Form
+            Back to Records List
           </Link>
           <div className="flex items-center justify-between">
             <div>
