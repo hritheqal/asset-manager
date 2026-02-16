@@ -133,3 +133,73 @@ CREATE POLICY "Enable read access for all users" ON maintenance_logs FOR SELECT 
 CREATE POLICY "Enable insert access for all users" ON maintenance_logs FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update access for all users" ON maintenance_logs FOR UPDATE USING (true);
 CREATE POLICY "Enable delete access for all users" ON maintenance_logs FOR DELETE USING (true);
+
+-- Create da5_registrations table
+CREATE TABLE da5_registrations (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  building_id UUID REFERENCES buildings(id) ON DELETE CASCADE,
+  
+  -- Filler info
+  filled_by_user_id UUID NOT NULL,
+  filled_by_name VARCHAR(255) NOT NULL,
+  filled_by_position VARCHAR(255) NOT NULL,
+  
+  -- On-behalf registration
+  is_on_behalf BOOLEAN DEFAULT FALSE,
+  on_behalf_email VARCHAR(255),
+  on_behalf_name VARCHAR(255),
+  on_behalf_position VARCHAR(255),
+  
+  -- Authorizing officer
+  officer_id UUID,
+  officer_name VARCHAR(255) NOT NULL,
+  officer_position VARCHAR(255) NOT NULL,
+  
+  -- Location details
+  location_type VARCHAR(50) CHECK (location_type IN ('BLOCK', 'EXTERNAL')),
+  block_name VARCHAR(255),
+  external_building_name VARCHAR(255),
+  floor VARCHAR(100),
+  room VARCHAR(100),
+  
+  -- Finishes
+  floor_finish VARCHAR(255),
+  floor_area DECIMAL(10, 2),
+  ceiling_finish VARCHAR(255),
+  ceiling_area DECIMAL(10, 2),
+  wall_finish VARCHAR(255),
+  wall_area DECIMAL(10, 2),
+  
+  -- GPS coordinates
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  
+  -- Photos and notes
+  photos TEXT[],
+  notes TEXT,
+  
+  -- Status
+  status VARCHAR(50) DEFAULT 'draft' CHECK (status IN ('draft', 'submitted')),
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- Create indexes for da5_registrations
+CREATE INDEX idx_da5_registrations_building_id ON da5_registrations(building_id);
+CREATE INDEX idx_da5_registrations_filled_by_user_id ON da5_registrations(filled_by_user_id);
+CREATE INDEX idx_da5_registrations_status ON da5_registrations(status);
+CREATE INDEX idx_da5_registrations_created_at ON da5_registrations(created_at);
+
+-- Apply trigger to da5_registrations
+CREATE TRIGGER update_da5_registrations_updated_at BEFORE UPDATE ON da5_registrations
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security for da5_registrations
+ALTER TABLE da5_registrations ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for da5_registrations
+CREATE POLICY "Enable read access for all users" ON da5_registrations FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON da5_registrations FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON da5_registrations FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON da5_registrations FOR DELETE USING (true);
