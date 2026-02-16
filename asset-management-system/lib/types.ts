@@ -105,6 +105,8 @@ export interface DA5Registration {
   // On-behalf registration
   is_on_behalf: boolean;
   on_behalf_email?: string;
+  on_behalf_name?: string;
+  on_behalf_position?: string;
   
   // Authorizing officer
   officer_id: string;

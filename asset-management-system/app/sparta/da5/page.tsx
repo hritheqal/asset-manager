@@ -188,11 +188,12 @@ export default function DA5RegistrationPage() {
       // Reset on-behalf data
       setOnBehalfEmail('');
       setOnBehalfUser(null);
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         on_behalf_email: undefined,
-        filled_by_name: currentUser.name,
-        filled_by_position: currentUser.position,
+        on_behalf_name: undefined,
+        on_behalf_position: undefined,
+        // Keep filled_by_* as current user (actual submitter) - no change needed
       }));
     }
   };
@@ -226,8 +227,9 @@ export default function DA5RegistrationPage() {
         setFormData(prev => ({
           ...prev,
           on_behalf_email: user.email,
-          filled_by_name: onBehalfData.name,
-          filled_by_position: onBehalfData.position,
+          on_behalf_name: onBehalfData.name,
+          on_behalf_position: onBehalfData.position,
+          // Keep filled_by_* as current user (actual submitter)
         }));
         setStatus({ type: 'success', message: `Email found: ${onBehalfData.name} - ${onBehalfData.position}` });
       } else {
