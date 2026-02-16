@@ -141,6 +141,7 @@ export default function NewBuildingPage() {
       
       if (blocksError) throw blocksError
 
+      setLoading(false)
       router.push(`/buildings/${building.id}`)
       router.refresh()
     } catch (err: any) {

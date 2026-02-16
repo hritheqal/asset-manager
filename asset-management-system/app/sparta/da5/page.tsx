@@ -820,7 +820,7 @@ export default function DA5RegistrationPage() {
                     step="0.01"
                     min="0"
                     value={formData.floor_area || ''}
-                    onChange={(e) => handleInputChange('floor_area', parseFloat(e.target.value) || undefined)}
+                    onChange={(e) => handleInputChange('floor_area', e.target.value === '' ? undefined : parseFloat(e.target.value))}
                     placeholder="0.00"
                     className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
                   />
@@ -849,7 +849,7 @@ export default function DA5RegistrationPage() {
                     step="0.01"
                     min="0"
                     value={formData.ceiling_area || ''}
-                    onChange={(e) => handleInputChange('ceiling_area', parseFloat(e.target.value) || undefined)}
+                    onChange={(e) => handleInputChange('ceiling_area', e.target.value === '' ? undefined : parseFloat(e.target.value))}
                     placeholder="0.00"
                     className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
                   />
@@ -878,7 +878,7 @@ export default function DA5RegistrationPage() {
                     step="0.01"
                     min="0"
                     value={formData.wall_area || ''}
-                    onChange={(e) => handleInputChange('wall_area', parseFloat(e.target.value) || undefined)}
+                    onChange={(e) => handleInputChange('wall_area', e.target.value === '' ? undefined : parseFloat(e.target.value))}
                     placeholder="0.00"
                     className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
                   />
@@ -902,7 +902,7 @@ export default function DA5RegistrationPage() {
                   <input
                     type="text"
                     value={formData.latitude || ''}
-                    onChange={(e) => handleInputChange('latitude', parseFloat(e.target.value) || undefined)}
+                    onChange={(e) => handleInputChange('latitude', e.target.value === '' ? undefined : parseFloat(e.target.value))}
                     placeholder="e.g., 3.139000"
                     className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
                   />
@@ -912,7 +912,7 @@ export default function DA5RegistrationPage() {
                   <input
                     type="text"
                     value={formData.longitude || ''}
-                    onChange={(e) => handleInputChange('longitude', parseFloat(e.target.value) || undefined)}
+                    onChange={(e) => handleInputChange('longitude', e.target.value === '' ? undefined : parseFloat(e.target.value))}
                     placeholder="e.g., 101.686900"
                     className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
                   />
