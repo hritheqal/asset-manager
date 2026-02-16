@@ -110,9 +110,10 @@ export default function NewBuildingPage() {
 
       if (buildingError) throw buildingError
 
-      // 2. Create floors (0 to floorCount-1)
+      // 2. Create floors (0 to floorCount, inclusive of Ground Floor)
+      // floorCount=0 creates Ground Floor only, floorCount=1 creates Ground+1, etc.
       const floorsData = []
-      for (let i = 0; i < floorCount; i++) {
+      for (let i = 0; i <= floorCount; i++) {
         floorsData.push({
           building_id: building.id,
           floor_number: i,
