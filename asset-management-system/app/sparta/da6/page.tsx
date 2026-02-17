@@ -1,3 +1,4 @@
+@ -0,0 +1,752 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,7 +20,8 @@ import {
   Shield,
   Package,
   ArrowLeft,
-  Upload
+  Upload,
+  Navigation
 } from 'lucide-react';
 
 // Sample officers data (in production, fetch from Supabase)
@@ -194,42 +196,104 @@ export default function DA6RegistrationPage() {
     if (!onBehalfEmail) return;
     
     setCheckingEmail(true);
+    setStatus(null);
     try {
-      // Mock check - in production, verify against your users database
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('name, position')
+        .eq('email', onBehalfEmail.toLowerCase())
+        .single();
+      
+      if (error || !user) {
+        setStatus({ type: 'error', message: 'Email not registered. Please register first.' });
+        setOnBehalfUser(null);
+        return;
+      }
       
       setOnBehalfUser({
         email: onBehalfEmail,
-        name: onBehalfEmail.split('@')[0],
-        position: 'Staff',
+        name: user.name,
+        position: user.position || 'Staff',
         isRegistered: true,
       });
       
       setFormData(prev => ({
         ...prev,
-        on_behalf_email: onBehalfEmail,
-        on_behalf_name: onBehalfEmail.split('@')[0],
-        on_behalf_position: 'Staff',
+        on_behalf_email: onBehalfEmail.toLowerCase(),
+        on_behalf_name: user.name,
+        on_behalf_position: user.position || 'Staff',
       }));
       
       setStatus({ type: 'success', message: 'Email verified successfully' });
     } catch (error) {
       setStatus({ type: 'error', message: 'Failed to verify email' });
+      setOnBehalfUser(null);
     } finally {
       setCheckingEmail(false);
     }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const newPhotos = files.map(file => URL.createObjectURL(file));
-      setUploadedPhotos(prev => [...prev, ...newPhotos]);
+      setStatus({ type: 'info', message: 'Uploading photos...' });
+      
+      try {
+        const uploadedUrls: string[] = [];
+        
+        for (const file of files) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+          const filePath = `da6-photos/${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('da6-photos')
+            .upload(filePath, file);
+          
+          if (uploadError) throw uploadError;
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('da6-photos')
+            .getPublicUrl(filePath);
+          
+          uploadedUrls.push(publicUrl);
+        }
+        
+        setUploadedPhotos(prev => [...prev, ...uploadedUrls]);
+        setStatus({ type: 'success', message: 'Photos uploaded successfully' });
+      } catch (error: any) {
+        console.error('Error uploading photos:', error);
+        setStatus({ type: 'error', message: 'Failed to upload photos' });
+      }
     }
   };
 
   const removePhoto = (index: number) => {
     setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setStatus({ type: 'error', message: 'Geolocation is not supported by your browser' });
+      return;
+    }
+    
+    setStatus({ type: 'info', message: 'Getting location...' });
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData(prev => ({
+          ...prev,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }));
+        setStatus({ type: 'success', message: 'Location obtained successfully' });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setStatus({ type: 'error', message: 'Unable to get location. Please check browser permissions.' });
+      }
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -653,8 +717,18 @@ export default function DA6RegistrationPage() {
                 />
               </div>
             </div>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={getCurrentLocation}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Get Current Location
+              </button>
+            </div>
             <p className="text-sm text-gray-500 mt-2">
-              Optional: Enter GPS coordinates for precise location tracking
+              Optional: Click "Get Current Location" or enter GPS coordinates manually for precise location tracking
             </p>
           </div>
 
