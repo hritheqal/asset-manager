@@ -151,3 +151,53 @@ export interface FinishType {
   name: string;
   created_at?: string;
 }
+
+export type DA6Status = 'draft' | 'submitted';
+export type EquipmentStatus = 'Active' | 'Damaged' | 'Inactive';
+
+export interface DA6Registration {
+  id: string;
+  building_id: string;
+  floor_id?: string;
+  asset_id?: string;
+  
+  // Filler info
+  filled_by_user_id: string;
+  filled_by_name: string;
+  filled_by_position: string;
+  
+  // On-behalf registration
+  is_on_behalf: boolean;
+  on_behalf_email?: string;
+  on_behalf_name?: string;
+  on_behalf_position?: string;
+  
+  // Authorizing officer
+  officer_id: string;
+  officer_name: string;
+  officer_position: string;
+  
+  // Equipment details
+  status: EquipmentStatus;
+  quantity: number;
+  measurement_value?: number;
+  measurement_unit?: 'm' | 'm2';
+  
+  // GPS coordinates
+  latitude?: number;
+  longitude?: number;
+  
+  // Photos and notes
+  photos?: string[];
+  notes?: string;
+  
+  // Status
+  status_record: DA6Status;
+  created_at?: string;
+  updated_at?: string;
+  
+  // Relations
+  building?: Building;
+  floor?: BuildingFloor;
+  asset?: Asset;
+}
