@@ -1,7 +1,52 @@
+'use client';
+
 import Link from 'next/link';
-import { Building2, LayoutDashboard, Package, ClipboardList } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { Building2, LayoutDashboard, Package, ClipboardList, User } from 'lucide-react';
+
+interface UserData {
+    email: string;
+    fullName: string;
+}
 
 export default function Navbar() {
+    const router = useRouter();
+    const supabase = createClient();
+    const [user, setUser] = useState<UserData | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const { data: { user: authUser } } = await supabase.auth.getUser();
+                if (authUser) {
+                    setUser({
+                        email: authUser.email || '',
+                        fullName: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching user:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUser();
+    }, [supabase]);
+
+    const handleLogout = async () => {
+        try {
+            await supabase.auth.signOut();
+            router.push('/auth/login');
+            router.refresh();
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
+
     return (
         <nav className="border-b border-gray-200 bg-white">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -42,7 +87,35 @@ export default function Navbar() {
                             </Link>
                         </div>
                     </div>
-                    {/* Mobile menu button could go here */}
+
+                    {/* User Section - Right Side */}
+                    <div className="flex items-center">
+                        {!loading && (
+                            <>
+                                {user ? (
+                                    <button
+                                        onClick={handleLogout}
+                                        className="group inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-xs font-medium rounded-full shadow-sm shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 hover:scale-102 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-out"
+                                    >
+                                        <div className="flex items-center justify-center w-5 h-5 mr-2 bg-white/20 rounded-full backdrop-blur-sm">
+                                            <User className="h-3 w-3 text-white" />
+                                        </div>
+                                        <span className="text-white">{user.fullName}</span>
+                                        <span className="mx-2 h-3 w-px bg-blue-400/50"></span>
+                                        <span className="text-red-200 group-hover:text-red-100 transition-colors">Logout</span>
+                                    </button>
+                                ) : (
+                                    <Link
+                                        href="/auth/login"
+                                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                    >
+                                        <User className="h-4 w-4 mr-1.5" />
+                                        Login
+                                    </Link>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </nav>
