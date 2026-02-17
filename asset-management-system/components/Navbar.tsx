@@ -35,6 +35,24 @@ export default function Navbar() {
         };
 
         fetchUser();
+
+        // Listen for auth state changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                setUser({
+                    email: session.user.email || '',
+                    fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+                });
+            } else {
+                setUser(null);
+            }
+            setLoading(false);
+        });
+
+        // Cleanup subscription on unmount
+        return () => {
+            subscription.unsubscribe();
+        };
     }, [supabase]);
 
     const handleLogout = async () => {
@@ -46,6 +64,11 @@ export default function Navbar() {
             console.error('Error signing out:', error);
         }
     };
+
+    // Don't show navbar if user is not logged in
+    if (!user) {
+        return null;
+    }
 
     return (
         <nav className="border-b border-gray-200 bg-white">
@@ -90,31 +113,17 @@ export default function Navbar() {
 
                     {/* User Section - Right Side */}
                     <div className="flex items-center">
-                        {!loading && (
-                            <>
-                                {user ? (
-                                    <button
-                                        onClick={handleLogout}
-                                        className="group inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-xs font-medium rounded-full shadow-sm shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 hover:scale-102 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-out"
-                                    >
-                                        <div className="flex items-center justify-center w-5 h-5 mr-2 bg-white/20 rounded-full backdrop-blur-sm">
-                                            <User className="h-3 w-3 text-white" />
-                                        </div>
-                                        <span className="text-white">{user.fullName}</span>
-                                        <span className="mx-2 h-3 w-px bg-blue-400/50"></span>
-                                        <span className="text-red-200 group-hover:text-red-100 transition-colors">Logout</span>
-                                    </button>
-                                ) : (
-                                    <Link
-                                        href="/auth/login"
-                                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                                    >
-                                        <User className="h-4 w-4 mr-1.5" />
-                                        Login
-                                    </Link>
-                                )}
-                            </>
-                        )}
+                        <button
+                            onClick={handleLogout}
+                            className="group inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-xs font-medium rounded-full shadow-sm shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 hover:scale-102 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-out"
+                        >
+                            <div className="flex items-center justify-center w-5 h-5 mr-2 bg-white/20 rounded-full backdrop-blur-sm">
+                                <User className="h-3 w-3 text-white" />
+                            </div>
+                            <span className="text-white">{user.fullName}</span>
+                            <span className="mx-2 h-3 w-px bg-blue-400/50"></span>
+                            <span className="text-red-200 group-hover:text-red-100 transition-colors">Logout</span>
+                        </button>
                     </div>
                 </div>
             </div>
