@@ -212,9 +212,8 @@ export interface DA6Registration {
   floor?: BuildingFloor;
   asset?: Asset;
 
+}
 
-  export type DA6Status = 'draft' | 'submitted';
-export type EquipmentStatus = 'Active' | 'Damaged' | 'Inactive';
 
 export interface DA6Registration {
   id: string;

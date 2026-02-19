@@ -1,4 +1,3 @@
-@ -0,0 +1,752 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -125,7 +124,7 @@ export default function DA6RegistrationPage() {
         .order('name');
       
       if (error) throw error;
-      setAssets(data || []);
+      setAssets((data || []) as Asset[]);
     } catch (error) {
       console.error('Error loading assets:', error);
       setStatus({ type: 'error', message: 'Failed to load assets' });

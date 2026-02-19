@@ -1,21 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Building2, LayoutDashboard, Package, ClipboardList, User } from 'lucide-react';
+import { Building2, LayoutDashboard, Package, ClipboardList, User, LogOut, Menu, X } from 'lucide-react';
 
 interface UserData {
     email: string;
     fullName: string;
 }
 
+const navigation = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Assets', href: '/assets', icon: Package },
+    { name: 'Buildings', href: '/buildings', icon: Building2 },
+    { name: 'SPARTA', href: '/spartav2', icon: ClipboardList },
+];
+
 export default function Navbar() {
     const router = useRouter();
+    const pathname = usePathname();
     const supabase = createClient();
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -36,7 +45,6 @@ export default function Navbar() {
 
         fetchUser();
 
-        // Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (session?.user) {
                 setUser({
@@ -49,7 +57,6 @@ export default function Navbar() {
             setLoading(false);
         });
 
-        // Cleanup subscription on unmount
         return () => {
             subscription.unsubscribe();
         };
@@ -65,68 +72,106 @@ export default function Navbar() {
         }
     };
 
-    // Don't show navbar if user is not logged in
     if (!user) {
         return null;
     }
 
     return (
-        <nav className="border-b border-gray-200 bg-white">
+        <nav className="border-b border-gray-200 bg-white shadow-sm" role="navigation" aria-label="Main navigation">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 justify-between">
                     <div className="flex">
-                        <div className="flex flex-shrink-0 items-center">
+                        <Link href="/" className="flex flex-shrink-0 items-center">
                             <Building2 className="h-8 w-8 text-blue-600" />
-                            <span className="ml-2 text-xl font-bold text-gray-900">AssetManager</span>
-                        </div>
+                            <span className="ml-2 text-xl font-bold text-gray-900">SPARTA DBKL</span>
+                        </Link>
                         <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <Link
-                                href="/"
-                                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                            >
-                                <LayoutDashboard className="mr-2 h-4 w-4" />
-                                Dashboard
-                            </Link>
-                            <Link
-                                href="/assets"
-                                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                            >
-                                <Package className="mr-2 h-4 w-4" />
-                                Assets
-                            </Link>
-                            <Link
-                                href="/buildings"
-                                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                            >
-                                <Building2 className="mr-2 h-4 w-4" />
-                                Buildings
-                            </Link>
-                            <Link
-                                href="/sparta"
-                                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                            >
-                                <ClipboardList className="mr-2 h-4 w-4" />
-                                SPARTA
-                            </Link>
+                            {navigation.map((item) => {
+                                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 transition-colors ${
+                                            isActive 
+                                                ? 'border-blue-500 text-gray-900' 
+                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                        }`}
+                                        aria-current={isActive ? 'page' : undefined}
+                                    >
+                                        <Icon className="mr-2 h-4 w-4" />
+                                        {item.name}
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* User Section - Right Side */}
-                    <div className="flex items-center">
+                    <div className="hidden sm:flex sm:items-center gap-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <User className="h-4 w-4" />
+                            <span>{user.fullName}</span>
+                        </div>
                         <button
                             onClick={handleLogout}
-                            className="group inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-xs font-medium rounded-full shadow-sm shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 hover:scale-102 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-out"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                         >
-                            <div className="flex items-center justify-center w-5 h-5 mr-2 bg-white/20 rounded-full backdrop-blur-sm">
-                                <User className="h-3 w-3 text-white" />
-                            </div>
-                            <span className="text-white">{user.fullName}</span>
-                            <span className="mx-2 h-3 w-px bg-blue-400/50"></span>
-                            <span className="text-red-200 group-hover:text-red-100 transition-colors">Logout</span>
+                            <LogOut className="h-4 w-4" />
+                            Logout
+                        </button>
+                    </div>
+
+                    <div className="flex items-center sm:hidden">
+                        <button
+                            type="button"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                            aria-expanded={mobileMenuOpen}
+                        >
+                            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                         </button>
                     </div>
                 </div>
             </div>
+
+            {mobileMenuOpen && (
+                <div className="sm:hidden border-t border-gray-200">
+                    <div className="space-y-1 px-4 pb-3 pt-2">
+                        {navigation.map((item) => {
+                            const isActive = pathname === item.href;
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    className={`flex items-center px-3 py-2 rounded-lg text-base font-medium ${
+                                        isActive 
+                                            ? 'bg-blue-50 text-blue-700' 
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    <Icon className="mr-3 h-5 w-5" />
+                                    {item.name}
+                                </Link>
+                            );
+                        })}
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                            <button
+                                onClick={() => {
+                                    setMobileMenuOpen(false);
+                                    handleLogout();
+                                }}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-base font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100"
+                            >
+                                <LogOut className="h-5 w-5" />
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </nav>
     );
 }
