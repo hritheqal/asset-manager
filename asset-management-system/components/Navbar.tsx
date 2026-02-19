@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Building2, LayoutDashboard, Package, ClipboardList, User, LogOut, Menu, X } from 'lucide-react';
+import { Building2, ClipboardList, User, LogOut, Menu, X } from 'lucide-react';
 
 interface UserData {
     email: string;
@@ -12,9 +12,6 @@ interface UserData {
 }
 
 const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Assets', href: '/assets', icon: Package },
-    { name: 'Buildings', href: '/buildings', icon: Building2 },
     { name: 'SPARTA', href: '/spartav2', icon: ClipboardList },
 ];
 

@@ -8,8 +8,9 @@ import {
   FolderOpen, 
   MapPin, 
   UserPlus,
-  ExternalLink,
+  ExternalLink, 
   Building2,
+  Package,
   ClipboardList,
   ArrowRight,
   Sparkles,
@@ -34,6 +35,28 @@ export default function SpartaV2Page() {
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
 
   const menuButtons: MenuButton[] = [
+    {
+      id: 'assets',
+      label: 'Assets',
+      description: 'Manage and view all registered assets',
+      icon: Package,
+      href: '/assets',
+      gradient: 'from-orange-500 to-orange-600',
+      borderColor: 'border-orange-200',
+      iconBg: 'bg-orange-100',
+      iconColor: 'text-orange-600'
+    },
+    {
+      id: 'buildings',
+      label: 'Buildings',
+      description: 'Manage and view all registered buildings',
+      icon: Building2,
+      href: '/buildings',
+      gradient: 'from-slate-500 to-slate-600',
+      borderColor: 'border-slate-200',
+      iconBg: 'bg-slate-100',
+      iconColor: 'text-slate-600'
+    },
     {
       id: 'da5',
       label: 'DA5 Building Finishes Form',
