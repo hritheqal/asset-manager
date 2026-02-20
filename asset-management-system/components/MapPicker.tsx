@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { Navigation, X, MapPin } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
@@ -33,16 +33,16 @@ interface MapPickerProps {
   onLocationChange: (lat: number, lng: number) => void;
 }
 
-function LocationMarker({ lat, lng, setLat, setLng }: { 
+function LocationMarker({ lat, lng, onLocationChange }: { 
   lat: number | null; 
   lng: number | null;
-  setLat: (lat: number) => void;
-  setLng: (lng: number) => void;
+  onLocationChange: (lat: number, lng: number) => void;
 }) {
   useMapEvents({
     click(e) {
-      setLat(e.latlng.lat);
-      setLng(e.latlng.lng);
+      const newLat = e.latlng.lat;
+      const newLng = e.latlng.lng;
+      onLocationChange(newLat, newLng);
     },
   });
 
@@ -67,19 +67,10 @@ export default function MapPicker({ latitude, longitude, onLocationChange }: Map
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLatChange = useCallback((newLat: number) => {
-    setLat(newLat);
-    if (lng !== null) {
-      onLocationChange(newLat, lng);
-    }
-  }, [lng, onLocationChange]);
-
-  const handleLngChange = useCallback((newLng: number) => {
-    setLng(newLng);
-    if (lat !== null) {
-      onLocationChange(lat, newLng);
-    }
-  }, [lat, onLocationChange]);
+  useEffect(() => {
+    setLat(latitude ?? null);
+    setLng(longitude ?? null);
+  }, [latitude, longitude]);
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -109,6 +100,33 @@ export default function MapPicker({ latitude, longitude, onLocationChange }: Map
   const clearLocation = () => {
     setLat(null);
     setLng(null);
+    onLocationChange(0, 0);
+  };
+
+  const handleLatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '') {
+      setLat(null);
+      return;
+    }
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal)) {
+      setLat(numVal);
+      onLocationChange(numVal, lng ?? 0);
+    }
+  };
+
+  const handleLngChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '') {
+      setLng(null);
+      return;
+    }
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal)) {
+      setLng(numVal);
+      onLocationChange(lat ?? 0, numVal);
+    }
   };
 
   return (
@@ -127,7 +145,7 @@ export default function MapPicker({ latitude, longitude, onLocationChange }: Map
             <Navigation className="h-4 w-4 mr-1" />
             {loading ? 'Getting...' : 'Current Location'}
           </button>
-          {(lat !== null || longitude !== null) && (
+          {(lat !== null || lng !== null) && (
             <button
               type="button"
               onClick={clearLocation}
@@ -160,8 +178,7 @@ export default function MapPicker({ latitude, longitude, onLocationChange }: Map
           <LocationMarker 
             lat={lat} 
             lng={lng}
-            setLat={handleLatChange}
-            setLng={handleLngChange}
+            onLocationChange={onLocationChange}
           />
         </MapContainer>
       </div>
@@ -173,10 +190,7 @@ export default function MapPicker({ latitude, longitude, onLocationChange }: Map
             type="number"
             step="any"
             value={lat ?? ''}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value);
-              if (!isNaN(val)) handleLatChange(val);
-            }}
+            onChange={handleLatChange}
             placeholder="Click on map or use current location"
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
           />
@@ -187,10 +201,7 @@ export default function MapPicker({ latitude, longitude, onLocationChange }: Map
             type="number"
             step="any"
             value={lng ?? ''}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value);
-              if (!isNaN(val)) handleLngChange(val);
-            }}
+            onChange={handleLngChange}
             placeholder="Click on map or use current location"
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
           />

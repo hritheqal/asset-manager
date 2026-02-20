@@ -29,6 +29,41 @@ const getBuildingIcon = () => {
   return buildingIcon;
 };
 
+function getZoneFromCoordinates(lat: number, lng: number): string {
+  const zones: Record<string, { center: [number, number]; radius: number }> = {
+    'Zone A - KL': { center: [3.1478, 101.6922], radius: 0.04 },
+    'Zone B - Cheras': { center: [3.1072, 101.7577], radius: 0.05 },
+    'Zone C - Kepong': { center: [3.2118, 101.6397], radius: 0.04 },
+    'Zone D - Lembah Pantai': { center: [3.0894, 101.6856], radius: 0.04 },
+    'Zone E - Segambut': { center: [3.1878, 101.6719], radius: 0.04 },
+    'Zone F - TTDI': { center: [3.1990, 101.7100], radius: 0.03 },
+    'Zone G - Setapak': { center: [3.2678, 101.6986], radius: 0.04 },
+    'Zone H - Wangsa Maju': { center: [3.2144, 101.7386], radius: 0.03 },
+    'Zone I - Bandar Tun Razak': { center: [3.0856, 101.7308], radius: 0.04 },
+    'Zone J - Bukit Jalil': { center: [3.0572, 101.6856], radius: 0.05 },
+    'Zone K - Seputeh': { center: [3.0992, 101.7019], radius: 0.03 },
+    'Zone L - Taman Desa': { center: [3.0772, 101.6769], radius: 0.03 },
+    'Zone M - Taman Connaught': { center: [3.1286, 101.7567], radius: 0.03 },
+    'Zone N - Bandar Menjalara': { center: [3.1917, 101.6308], radius: 0.03 },
+    'Zone O - Sri Hartamas': { center: [3.1639, 101.6539], radius: 0.03 },
+  };
+
+  let closestZone = 'Zone A - KL';
+  let minDistance = Infinity;
+
+  for (const [zoneName, zone] of Object.entries(zones)) {
+    const distance = Math.sqrt(
+      Math.pow(lat - zone.center[0], 2) + Math.pow(lng - zone.center[1], 2)
+    );
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestZone = zoneName;
+    }
+  }
+
+  return closestZone;
+}
+
 interface BuildingData {
   id: string;
   name: string;
@@ -133,41 +168,6 @@ export default function MapDashboard({ buildings }: MapDashboardProps) {
   }, [buildingsWithLocation]);
 
   const isClusterView = zoom < CLUSTER_ZOOM_THRESHOLD;
-
-  const getZoneFromCoordinates = (lat: number, lng: number): string => {
-    const zones: Record<string, { center: [number, number]; radius: number }> = {
-      'Zone A - KL': { center: [3.1478, 101.6922], radius: 0.04 },
-      'Zone B - Cheras': { center: [3.1072, 101.7577], radius: 0.05 },
-      'Zone C - Kepong': { center: [3.2118, 101.6397], radius: 0.04 },
-      'Zone D - Lembah Pantai': { center: [3.0894, 101.6856], radius: 0.04 },
-      'Zone E - Segambut': { center: [3.1878, 101.6719], radius: 0.04 },
-      'Zone F - TTDI': { center: [3.1990, 101.7100], radius: 0.03 },
-      'Zone G - Setapak': { center: [3.2678, 101.6986], radius: 0.04 },
-      'Zone H - Wangsa Maju': { center: [3.2144, 101.7386], radius: 0.03 },
-      'Zone I - Bandar Tun Razak': { center: [3.0856, 101.7308], radius: 0.04 },
-      'Zone J - Bukit Jalil': { center: [3.0572, 101.6856], radius: 0.05 },
-      'Zone K - Seputeh': { center: [3.0992, 101.7019], radius: 0.03 },
-      'Zone L - Taman Desa': { center: [3.0772, 101.6769], radius: 0.03 },
-      'Zone M - Taman Connaught': { center: [3.1286, 101.7567], radius: 0.03 },
-      'Zone N - Bandar Menjalara': { center: [3.1917, 101.6308], radius: 0.03 },
-      'Zone O - Sri Hartamas': { center: [3.1639, 101.6539], radius: 0.03 },
-    };
-
-    let closestZone = 'Zone A - KL';
-    let minDistance = Infinity;
-
-    for (const [zoneName, zone] of Object.entries(zones)) {
-      const distance = Math.sqrt(
-        Math.pow(lat - zone.center[0], 2) + Math.pow(lng - zone.center[1], 2)
-      );
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestZone = zoneName;
-      }
-    }
-
-    return closestZone;
-  };
 
   const getClusterColor = (count: number) => {
     if (count >= 10) return '#dc2626';

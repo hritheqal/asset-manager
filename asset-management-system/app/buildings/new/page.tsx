@@ -87,8 +87,13 @@ export default function NewBuildingPage() {
   }
 
   const handleLocationChange = (lat: number, lng: number) => {
-    setLatitude(lat)
-    setLongitude(lng)
+    if (lat === 0 && lng === 0) {
+      setLatitude(null)
+      setLongitude(null)
+    } else {
+      setLatitude(lat)
+      setLongitude(lng)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
