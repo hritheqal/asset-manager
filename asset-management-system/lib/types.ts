@@ -28,6 +28,8 @@ export interface Building {
   postal_code: string;
   description?: string;
   floor_count?: number;
+  latitude?: number;
+  longitude?: number;
   created_at?: string;
   
   // Relations

@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, X, ChevronDown, Search } from 'lucide-react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
+  ssr: false,
+  loading: () => <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center"><p className="text-gray-500">Loading map...</p></div>
+})
 
 // DBKL Zones list
 const DBKL_ZONES = [
@@ -39,6 +45,10 @@ export default function NewBuildingPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Location state
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -76,6 +86,11 @@ export default function NewBuildingPage() {
     return DBKL_ZONES.find(z => z.id === zoneId)?.name || zoneId
   }
 
+  const handleLocationChange = (lat: number, lng: number) => {
+    setLatitude(lat)
+    setLongitude(lng)
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
@@ -100,6 +115,8 @@ export default function NewBuildingPage() {
         postal_code: formData.get('postal_code') as string || null,
         description: formData.get('description') as string || null,
         floor_count: floorCount,
+        latitude: latitude,
+        longitude: longitude,
       }
 
       const { data: building, error: buildingError } = await supabase
@@ -397,6 +414,16 @@ export default function NewBuildingPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Location */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Location</h2>
+            <MapPicker
+              latitude={latitude}
+              longitude={longitude}
+              onLocationChange={handleLocationChange}
+            />
           </div>
 
           {/* Submit Button */}
