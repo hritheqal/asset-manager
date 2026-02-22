@@ -3,20 +3,20 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import Link from 'next/link';
-import { Building, MapPin, Layers, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
+import { Building, MapPin, Layers, ZoomIn, ZoomOut, Maximize2, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 const DEFAULT_CENTER: [number, number] = [3.1390, 101.6869];
 const DEFAULT_ZOOM = 11;
 const CLUSTER_ZOOM_THRESHOLD = 14;
 
-let buildingIcon: any = null;
+let da5Icon: any = null;
 
-const getBuildingIcon = () => {
+const getDA5Icon = () => {
   if (typeof window === 'undefined') return null;
-  if (!buildingIcon) {
+  if (!da5Icon) {
     const L = require('leaflet');
-    buildingIcon = new L.Icon({
+    da5Icon = new L.Icon({
       iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
       iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
       shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -26,63 +26,31 @@ const getBuildingIcon = () => {
       shadowSize: [41, 41],
     });
   }
-  return buildingIcon;
+  return da5Icon;
 };
 
-function getZoneFromCoordinates(lat: number, lng: number): string {
-  const zones: Record<string, { center: [number, number]; radius: number }> = {
-    'Zone A - KL': { center: [3.1478, 101.6922], radius: 0.04 },
-    'Zone B - Cheras': { center: [3.1072, 101.7577], radius: 0.05 },
-    'Zone C - Kepong': { center: [3.2118, 101.6397], radius: 0.04 },
-    'Zone D - Lembah Pantai': { center: [3.0894, 101.6856], radius: 0.04 },
-    'Zone E - Segambut': { center: [3.1878, 101.6719], radius: 0.04 },
-    'Zone F - TTDI': { center: [3.1990, 101.7100], radius: 0.03 },
-    'Zone G - Setapak': { center: [3.2678, 101.6986], radius: 0.04 },
-    'Zone H - Wangsa Maju': { center: [3.2144, 101.7386], radius: 0.03 },
-    'Zone I - Bandar Tun Razak': { center: [3.0856, 101.7308], radius: 0.04 },
-    'Zone J - Bukit Jalil': { center: [3.0572, 101.6856], radius: 0.05 },
-    'Zone K - Seputeh': { center: [3.0992, 101.7019], radius: 0.03 },
-    'Zone L - Taman Desa': { center: [3.0772, 101.6769], radius: 0.03 },
-    'Zone M - Taman Connaught': { center: [3.1286, 101.7567], radius: 0.03 },
-    'Zone N - Bandar Menjalara': { center: [3.1917, 101.6308], radius: 0.03 },
-    'Zone O - Sri Hartamas': { center: [3.1639, 101.6539], radius: 0.03 },
-  };
-
-  let closestZone = 'Zone A - KL';
-  let minDistance = Infinity;
-
-  for (const [zoneName, zone] of Object.entries(zones)) {
-    const distance = Math.sqrt(
-      Math.pow(lat - zone.center[0], 2) + Math.pow(lng - zone.center[1], 2)
-    );
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestZone = zoneName;
-    }
-  }
-
-  return closestZone;
-}
-
-interface BuildingData {
+interface DA5Data {
   id: string;
-  name: string;
-  address: string;
-  city?: string;
+  building_id: string;
+  building_name?: string;
+  floor: string;
+  room: string;
+  location_type: string;
+  floor_finish: string;
+  status: string;
   latitude: number;
   longitude: number;
-  asset_count?: number;
 }
 
-interface ZoneCluster {
+interface DA5Cluster {
   name: string;
   count: number;
-  buildings: BuildingData[];
+  records: DA5Data[];
   center: [number, number];
 }
 
 interface MapDashboardProps {
-  buildings: BuildingData[];
+  da5Data: DA5Data[];
 }
 
 function MapController({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
@@ -126,7 +94,7 @@ function ZoomControls({ onZoomIn, onZoomOut, onFitBounds }: {
         <button
           onClick={onFitBounds}
           className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-b-md"
-          title="Fit all buildings"
+          title="Fit all points"
         >
           <Maximize2 className="h-4 w-4" />
         </button>
@@ -135,45 +103,51 @@ function ZoomControls({ onZoomIn, onZoomOut, onFitBounds }: {
   );
 }
 
-export default function MapDashboard({ buildings }: MapDashboardProps) {
+function getStatusIcon(status: string) {
+  switch (status) {
+    case 'submitted':
+      return <CheckCircle className="h-4 w-4 text-green-600" />;
+    case 'draft':
+      return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+    default:
+      return <CheckCircle className="h-4 w-4 text-gray-600" />;
+  }
+}
+
+export default function MapDashboard({ da5Data }: MapDashboardProps) {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const mapRef = useRef<any>(null);
 
-  const buildingsWithLocation = useMemo(() => 
-    buildings.filter(b => b.latitude && b.longitude),
-    [buildings]
+  const recordsWithLocation = useMemo(() => 
+    da5Data.filter(d => d.latitude && d.longitude),
+    [da5Data]
   );
 
   const clusters = useMemo(() => {
-    const zoneMap = new Map<string, ZoneCluster>();
+    const clusterMap = new Map<string, DA5Cluster>();
     
-    buildingsWithLocation.forEach(building => {
-      const zoneKey = getZoneFromCoordinates(building.latitude, building.longitude);
-      const existing = zoneMap.get(zoneKey);
+    recordsWithLocation.forEach(record => {
+      // Cluster by building
+      const key = record.building_id;
+      const existing = clusterMap.get(key);
       
       if (existing) {
         existing.count += 1;
-        existing.buildings.push(building);
+        existing.records.push(record);
       } else {
-        zoneMap.set(zoneKey, {
-          name: zoneKey,
+        clusterMap.set(key, {
+          name: record.building_name || 'Unknown',
           count: 1,
-          buildings: [building],
-          center: [building.latitude, building.longitude],
+          records: [record],
+          center: [record.latitude, record.longitude],
         });
       }
     });
     
-    return Array.from(zoneMap.values());
-  }, [buildingsWithLocation]);
+    return Array.from(clusterMap.values());
+  }, [recordsWithLocation]);
 
   const isClusterView = zoom < CLUSTER_ZOOM_THRESHOLD;
-
-  const getClusterColor = (count: number) => {
-    if (count >= 10) return '#dc2626';
-    if (count >= 5) return '#f59e0b';
-    return '#22c55e';
-  };
 
   const handleZoomIn = () => {
     if (mapRef.current) {
@@ -188,10 +162,10 @@ export default function MapDashboard({ buildings }: MapDashboardProps) {
   };
 
   const handleFitBounds = () => {
-    if (mapRef.current && buildingsWithLocation.length > 0) {
+    if (mapRef.current && recordsWithLocation.length > 0) {
       const L = require('leaflet');
       const bounds = L.latLngBounds(
-        buildingsWithLocation.map(b => [b.latitude, b.longitude] as [number, number])
+        recordsWithLocation.map(r => [r.latitude, r.longitude] as [number, number])
       );
       mapRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
@@ -227,7 +201,7 @@ export default function MapDashboard({ buildings }: MapDashboardProps) {
               radius={Math.min(Math.max(cluster.count * 3, 15), 40)}
               pathOptions={{
                 color: 'white',
-                fillColor: getClusterColor(cluster.count),
+                fillColor: '#6366f1',
                 fillOpacity: 0.8,
                 weight: 3,
               }}
@@ -237,24 +211,20 @@ export default function MapDashboard({ buildings }: MapDashboardProps) {
                   <h3 className="font-semibold text-gray-900 mb-2">{cluster.name}</h3>
                   <div className="space-y-1">
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">{cluster.count}</span> building{cluster.count > 1 ? 's' : ''}
+                      <span className="font-medium">{cluster.count}</span> DA5 record{cluster.count > 1 ? 's' : ''}
                     </p>
                     <div className="mt-2 pt-2 border-t border-gray-200">
-                      <p className="text-xs text-gray-500 mb-1">Buildings:</p>
+                      <p className="text-xs text-gray-500 mb-1">Records:</p>
                       <ul className="text-xs space-y-1 max-h-32 overflow-y-auto">
-                        {cluster.buildings.slice(0, 5).map((b) => (
-                          <li key={b.id} className="truncate">
-                            <Link 
-                              href={`/buildings/${b.id}`}
-                              className="text-indigo-600 hover:text-indigo-800"
-                            >
-                              {b.name}
-                            </Link>
+                        {cluster.records.slice(0, 5).map((r) => (
+                          <li key={r.id} className="flex items-center justify-between">
+                            <span className="truncate">{r.floor || 'N/A'} - {r.room || 'N/A'}</span>
+                            {getStatusIcon(r.status)}
                           </li>
                         ))}
-                        {cluster.buildings.length > 5 && (
+                        {cluster.records.length > 5 && (
                           <li className="text-gray-500">
-                            +{cluster.buildings.length - 5} more...
+                            +{cluster.records.length - 5} more...
                           </li>
                         )}
                       </ul>
@@ -265,30 +235,40 @@ export default function MapDashboard({ buildings }: MapDashboardProps) {
             </CircleMarker>
           ))
         ) : (
-          buildingsWithLocation.map((building) => (
+          recordsWithLocation.map((record) => (
             <Marker
-              key={building.id}
-              position={[building.latitude, building.longitude]}
-              icon={getBuildingIcon()}
+              key={record.id}
+              position={[record.latitude, record.longitude]}
+              icon={getDA5Icon()}
             >
               <Popup>
                 <div className="p-2 min-w-[200px]">
-                  <h3 className="font-semibold text-gray-900 mb-1">{building.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{building.address}</p>
-                  {building.city && (
-                    <p className="text-xs text-gray-500 mb-2">{building.city}</p>
-                  )}
-                  {building.asset_count !== undefined && (
-                    <p className="text-sm text-indigo-600">
-                      <Layers className="inline h-3 w-3 mr-1" />
-                      {building.asset_count} asset{building.asset_count > 1 ? 's' : ''}
-                    </p>
-                  )}
+                  <h3 className="font-semibold text-gray-900 mb-1">{record.building_name}</h3>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-3 w-3 text-gray-500" />
+                      <span>Floor: {record.floor || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3 text-gray-500" />
+                      <span>Room: {record.room || 'N/A'}</span>
+                    </div>
+                    {record.floor_finish && (
+                      <div className="flex items-center gap-2">
+                        <Building className="h-3 w-3 text-gray-500" />
+                        <span>{record.floor_finish}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+                      {getStatusIcon(record.status)}
+                      <span className="font-medium">{record.status}</span>
+                    </div>
+                  </div>
                   <Link
-                    href={`/buildings/${building.id}`}
-                    className="mt-2 inline-block text-sm text-indigo-600 hover:text-indigo-800"
+                    href={`/sparta?building=${record.building_id}`}
+                    className="mt-3 inline-block text-sm text-indigo-600 hover:text-indigo-800"
                   >
-                    View Details
+                    View Records
                   </Link>
                 </div>
               </Popup>
@@ -300,16 +280,8 @@ export default function MapDashboard({ buildings }: MapDashboardProps) {
       <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000]">
         <div className="flex items-center gap-2 text-sm">
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span>1-4</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <span>5-9</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span>10+</span>
+            <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
+            <span>DA5 Points</span>
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-1">

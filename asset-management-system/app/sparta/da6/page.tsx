@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client';
 import { Building, DA6Registration, BuildingFloor, Asset } from '@/lib/types';
 import { 
   Building2, 
-  MapPin, 
   Camera, 
   Save, 
   RotateCcw,
@@ -19,8 +18,7 @@ import {
   Shield,
   Package,
   ArrowLeft,
-  Upload,
-  Navigation
+  Upload
 } from 'lucide-react';
 
 // Sample officers data (in production, fetch from Supabase)
@@ -269,30 +267,6 @@ export default function DA6RegistrationPage() {
 
   const removePhoto = (index: number) => {
     setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setStatus({ type: 'error', message: 'Geolocation is not supported by your browser' });
-      return;
-    }
-    
-    setStatus({ type: 'info', message: 'Getting location...' });
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFormData(prev => ({
-          ...prev,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        }));
-        setStatus({ type: 'success', message: 'Location obtained successfully' });
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setStatus({ type: 'error', message: 'Unable to get location. Please check browser permissions.' });
-      }
-    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -679,56 +653,6 @@ export default function DA6RegistrationPage() {
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* GPS Location */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <MapPin className="h-6 w-6 text-emerald-600" />
-              <h2 className="text-xl font-semibold text-gray-900">GPS Location</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Latitude
-                </label>
-                <input
-                  type="number"
-                  step="0.00000001"
-                  value={formData.latitude || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, latitude: parseFloat(e.target.value) || undefined }))}
-                  placeholder="e.g., 3.1390"
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Longitude
-                </label>
-                <input
-                  type="number"
-                  step="0.00000001"
-                  value={formData.longitude || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, longitude: parseFloat(e.target.value) || undefined }))}
-                  placeholder="e.g., 101.6869"
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={getCurrentLocation}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-              >
-                <Navigation className="h-4 w-4 mr-2" />
-                Get Current Location
-              </button>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">
-              Optional: Click "Get Current Location" or enter GPS coordinates manually for precise location tracking
-            </p>
           </div>
 
           {/* Photos */}

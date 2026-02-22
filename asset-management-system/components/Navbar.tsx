@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Building2, ClipboardList, User, LogOut, Menu, X } from 'lucide-react';
+import { Building2, ClipboardList, User, LogOut, Menu, X, Search } from 'lucide-react';
 
 interface UserData {
     email: string;
@@ -15,6 +15,13 @@ const navigation = [
     { name: 'SPARTA', href: '/spartav2', icon: ClipboardList },
 ];
 
+const searchOptions = [
+    { value: 'assets', label: 'Assets', href: '/assets?search=' },
+    { value: 'buildings', label: 'Buildings', href: '/buildings?search=' },
+    { value: 'da5', label: 'DA5 Records', href: '/sparta?tab=da5' },
+    { value: 'da6', label: 'DA6 Records', href: '/sparta?tab=da6' },
+];
+
 export default function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
@@ -22,6 +29,9 @@ export default function Navbar() {
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchType, setSearchType] = useState('assets');
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -69,6 +79,36 @@ export default function Navbar() {
         }
     };
 
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+        
+        const selectedOption = searchOptions.find(opt => opt.value === searchType);
+        if (selectedOption) {
+            router.push(`${selectedOption.href}${encodeURIComponent(searchQuery)}`);
+            setSearchQuery('');
+            setIsSearchOpen(false);
+        }
+    };
+
+    // Close search when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (!target.closest('.search-dropdown')) {
+                setIsSearchOpen(false);
+            }
+        };
+        
+        if (isSearchOpen) {
+            document.addEventListener('click', handleClickOutside);
+        }
+        
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [isSearchOpen]);
+
     if (!user) {
         return null;
     }
@@ -102,6 +142,57 @@ export default function Navbar() {
                                     </Link>
                                 );
                             })}
+                            
+                            {/* Global Search */}
+                            <div className="relative search-dropdown">
+                                <button
+                                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                >
+                                    <Search className="h-4 w-4 mr-1" />
+                                    Search
+                                </button>
+                                
+                                {isSearchOpen && (
+                                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
+                                        <form onSubmit={handleSearch}>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-700 mb-1">Search Type</label>
+                                                    <select
+                                                        value={searchType}
+                                                        onChange={(e) => setSearchType(e.target.value)}
+                                                        className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 text-sm"
+                                                    >
+                                                        {searchOptions.map((opt) => (
+                                                            <option key={opt.value} value={opt.value}>
+                                                                {opt.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-700 mb-1">Search</label>
+                                                    <input
+                                                        type="text"
+                                                        value={searchQuery}
+                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        placeholder="Enter search term..."
+                                                        className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 text-sm"
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    className="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+                                                >
+                                                    Search
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

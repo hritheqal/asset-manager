@@ -31,20 +31,57 @@ interface MapPickerProps {
   latitude?: number | null;
   longitude?: number | null;
   onLocationChange: (lat: number, lng: number) => void;
+  onZoneDetect?: (zoneId: string, zoneName: string) => void;
 }
 
-function LocationMarker({ lat, lng, onLocationChange }: { 
+function LocationMarker({ lat, lng, onLocationChange, onZoneDetect }: { 
   lat: number | null; 
   lng: number | null;
   onLocationChange: (lat: number, lng: number) => void;
+  onZoneDetect?: (zoneId: string, zoneName: string) => void;
 }) {
+  const [prevLatLng, setPrevLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  
   useMapEvents({
     click(e) {
       const newLat = e.latlng.lat;
       const newLng = e.latlng.lng;
       onLocationChange(newLat, newLng);
+      
+      // Trigger zone detection if callback provided
+      if (onZoneDetect) {
+        // Fetch zone from database
+        fetchZone(newLat, newLng);
+      }
     },
   });
+
+  const fetchZone = async (clickLat: number, clickLng: number) => {
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      
+      const { data, error } = await supabase.rpc('get_zone_id', {
+        p_lat: clickLat,
+        p_lng: clickLng
+      });
+      
+      if (!error && data) {
+        // Get zone name
+        const { data: zoneData } = await supabase
+          .from('dbkl_zones')
+          .select('zone_name')
+          .eq('zone_id', data)
+          .single();
+        
+        if (zoneData) {
+          onZoneDetect(data, zoneData.zone_name);
+        }
+      }
+    } catch (err) {
+      console.error('Error detecting zone:', err);
+    }
+  };
 
   const map = useMap();
   
@@ -61,7 +98,7 @@ function LocationMarker({ lat, lng, onLocationChange }: {
   return null;
 }
 
-export default function MapPicker({ latitude, longitude, onLocationChange }: MapPickerProps) {
+export default function MapPicker({ latitude, longitude, onLocationChange, onZoneDetect }: MapPickerProps) {
   const [lat, setLat] = useState<number | null>(latitude ?? null);
   const [lng, setLng] = useState<number | null>(longitude ?? null);
   const [loading, setLoading] = useState(false);
@@ -179,6 +216,7 @@ export default function MapPicker({ latitude, longitude, onLocationChange }: Map
             lat={lat} 
             lng={lng}
             onLocationChange={onLocationChange}
+            onZoneDetect={onZoneDetect}
           />
         </MapContainer>
       </div>

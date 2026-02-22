@@ -9,6 +9,16 @@ export interface User {
   created_at?: string;
 }
 
+export interface DBKLZone {
+  id: string;
+  zone_id: string;
+  zone_name: string;
+  boundary_polygon: any;
+  center_lat?: number;
+  center_lng?: number;
+  created_at?: string;
+}
+
 export type AssetStatus = 'active' | 'maintenance' | 'retired' | 'disposed';
 export type AssetCondition = 'excellent' | 'good' | 'fair' | 'poor';
 
@@ -22,14 +32,8 @@ export interface AssetCategory {
 export interface Building {
   id: string;
   name: string;
-  address: string;
-  city: string;
-  state: string;
-  postal_code: string;
   description?: string;
   floor_count?: number;
-  latitude?: number;
-  longitude?: number;
   created_at?: string;
   
   // Relations
@@ -96,7 +100,7 @@ export interface MaintenanceLog {
   created_at?: string;
 }
 
-export type LocationType = 'BLOCK' | 'EXTERNAL';
+export type LocationType = 'BLOCK' | 'OUTDOOR';
 export type DA5Status = 'draft' | 'submitted';
 
 export interface Officer {
@@ -196,10 +200,6 @@ export interface DA6Registration {
   measurement_value?: number;
   measurement_unit?: 'm' | 'm2';
   
-  // GPS coordinates
-  latitude?: number;
-  longitude?: number;
-  
   // Photos and notes
   photos?: string[];
   notes?: string;
@@ -213,36 +213,7 @@ export interface DA6Registration {
   building?: Building;
   floor?: BuildingFloor;
   asset?: Asset;
-
 }
-
-
-export interface DA6Registration {
-  id: string;
-  building_id: string;
-  floor_id?: string;
-  asset_id?: string;
-  
-  // Filler info
-  filled_by_user_id: string;
-  filled_by_name: string;
-  filled_by_position: string;
-  
-  // On-behalf registration
-  is_on_behalf: boolean;
-  on_behalf_email?: string;
-  on_behalf_name?: string;
-  on_behalf_position?: string;
-  
-  // Authorizing officer
-  officer_id: string;
-  officer_name: string;
-  officer_position: string;
-  
-  // Equipment details
-  status: EquipmentStatus;
-  quantity: number;
-  measurement_value?: number;
   measurement_unit?: 'm' | 'm2';
   
   // GPS coordinates
