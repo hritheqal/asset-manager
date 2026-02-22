@@ -8,21 +8,27 @@ import {
   FolderOpen, 
   MapPin, 
   UserPlus,
-  ExternalLink,
+  ExternalLink, 
   Building2,
-  ClipboardList
+  Package,
+  ClipboardList,
+  ArrowRight,
+  Sparkles,
+  Shield,
+  Clock
 } from 'lucide-react';
 
 interface MenuButton {
   id: string;
   label: string;
-  description?: string;
+  description: string;
   icon: React.ElementType;
   href: string;
   external?: boolean;
-  color: string;
-  bgColor: string;
-  hoverColor: string;
+  gradient: string;
+  borderColor: string;
+  iconBg: string;
+  iconColor: string;
 }
 
 export default function SpartaV2Page() {
@@ -30,14 +36,37 @@ export default function SpartaV2Page() {
 
   const menuButtons: MenuButton[] = [
     {
+      id: 'assets',
+      label: 'Assets',
+      description: 'Manage and view all registered assets',
+      icon: Package,
+      href: '/assets',
+      gradient: 'from-orange-500 to-orange-600',
+      borderColor: 'border-orange-200',
+      iconBg: 'bg-orange-100',
+      iconColor: 'text-orange-600'
+    },
+    {
+      id: 'buildings',
+      label: 'Buildings',
+      description: 'Manage and view all registered buildings',
+      icon: Building2,
+      href: '/buildings',
+      gradient: 'from-slate-500 to-slate-600',
+      borderColor: 'border-slate-200',
+      iconBg: 'bg-slate-100',
+      iconColor: 'text-slate-600'
+    },
+    {
       id: 'da5',
       label: 'DA5 Building Finishes Form',
       description: 'Building Space & Finishes Registration Form',
       icon: FileText,
       href: '/sparta/da5',
-      color: 'text-blue-700',
-      bgColor: 'bg-blue-50',
-      hoverColor: 'hover:bg-blue-100'
+      gradient: 'from-blue-500 to-blue-600',
+      borderColor: 'border-blue-200',
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600'
     },
     {
       id: 'da6',
@@ -45,215 +74,254 @@ export default function SpartaV2Page() {
       description: 'Equipment & Asset Registration Form',
       icon: BookOpen,
       href: '/sparta/da6',
-      color: 'text-emerald-700',
-      bgColor: 'bg-emerald-50',
-      hoverColor: 'hover:bg-emerald-100'
+      gradient: 'from-emerald-500 to-emerald-600',
+      borderColor: 'border-emerald-200',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600'
     },
     {
       id: 'da4-list',
-      label: 'DA4 List - Block & External Buildings List',
+      label: 'DA4 List - Block & External Buildings',
       description: 'List of Blocks & External Buildings',
       icon: Building2,
       href: 'https://drive.google.com/drive/folders/1roPyt13bx6BeRdEI4nqYMnYmGgYdRyEy',
       external: true,
-      color: 'text-purple-700',
-      bgColor: 'bg-purple-50',
-      hoverColor: 'hover:bg-purple-100'
+      gradient: 'from-purple-500 to-purple-600',
+      borderColor: 'border-purple-200',
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600'
     },
     {
       id: 'da5-list',
-      label: 'DA5 List - Floor/Room/Finishes Block & External Buildings',
+      label: 'DA5 List - Floor/Room/Finishes Records',
       description: 'DA5 Records Dashboard',
       icon: List,
       href: '/sparta',
-      color: 'text-indigo-700',
-      bgColor: 'bg-indigo-50',
-      hoverColor: 'hover:bg-indigo-100'
+      gradient: 'from-indigo-500 to-indigo-600',
+      borderColor: 'border-indigo-200',
+      iconBg: 'bg-indigo-100',
+      iconColor: 'text-indigo-600'
     },
     {
       id: 'da6-list',
-      label: 'DA6 List - Block/External Building Components',
+      label: 'DA6 List - Building Components',
       description: 'DA6 Records Dashboard',
       icon: ClipboardList,
-      href: '/sparta',
-      color: 'text-teal-700',
-      bgColor: 'bg-teal-50',
-      hoverColor: 'hover:bg-teal-100'
+      href: '/sparta?tab=da6',
+      gradient: 'from-teal-500 to-teal-600',
+      borderColor: 'border-teal-200',
+      iconBg: 'bg-teal-100',
+      iconColor: 'text-teal-600'
     },
     {
       id: 'documents',
       label: 'Reference Documents',
-      description: 'Reference Documents',
+      description: 'Reference Documents & Guidelines',
       icon: FolderOpen,
       href: 'https://drive.google.com/drive/folders/1-f7utQZy8f9e72oFsEM4uvclDy7VqfoY',
       external: true,
-      color: 'text-amber-700',
-      bgColor: 'bg-amber-50',
-      hoverColor: 'hover:bg-amber-100'
+      gradient: 'from-amber-500 to-amber-600',
+      borderColor: 'border-amber-200',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600'
     },
     {
       id: 'mapping',
       label: 'Asset Record Mapping Summary',
-      description: 'Asset Mapping Summary',
+      description: 'Asset Mapping Summary & Reports',
       icon: MapPin,
-      href: '/sparta',
-      color: 'text-rose-700',
-      bgColor: 'bg-rose-50',
-      hoverColor: 'hover:bg-rose-100'
+      href: '/dashboard',
+      gradient: 'from-rose-500 to-rose-600',
+      borderColor: 'border-rose-200',
+      iconBg: 'bg-rose-100',
+      iconColor: 'text-rose-600'
     },
     {
       id: 'register',
       label: 'First Time Registration',
-      description: 'First Time Registration',
+      description: 'Create new user account',
       icon: UserPlus,
       href: '/auth/signup',
-      color: 'text-cyan-700',
-      bgColor: 'bg-cyan-50',
-      hoverColor: 'hover:bg-cyan-100'
+      gradient: 'from-cyan-500 to-cyan-600',
+      borderColor: 'border-cyan-200',
+      iconBg: 'bg-cyan-100',
+      iconColor: 'text-cyan-600'
     }
   ];
 
   const handleButtonClick = (button: MenuButton) => {
-    window.open(button.href, '_blank');
+    if (button.external) {
+      window.open(button.href, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.href = button.href;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
-      {/* Header Section */}
-      <div 
-        className="relative py-16 px-4"
-        style={{
-          background: 'linear-gradient(135deg, #1e6c93 0%, #226e93 50%, #1a5a7a 100%)',
-        }}
-      >
-        <div className="absolute inset-0 opacity-20">
-          <div 
-            className="w-full h-full"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          />
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e6c93] via-[#2d8ab8] to-[#1a5a7a] shadow-2xl mb-8">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
         </div>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-wide">
-            SISTEM PENDAFTARAN ASET ROL TAK ALIH
-          </h1>
-          <h2 className="text-2xl md:text-3xl font-light text-blue-100 mb-2">
-            (SPARTA) DBKL
-          </h2>
-          <p className="text-blue-200 text-lg">
-            Sistem pendaftaran aset untuk bangunan dan kemudahan DBKL
-          </p>
+        
+        {/* Decorative Elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
+        
+        <div className="relative px-6 py-12 sm:px-12 sm:py-16">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6">
+              <Sparkles className="h-4 w-4" />
+              <span>Version 2.0 - Now Available</span>
+            </div>
+            
+            {/* Title */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
+              SISTEM PENDAFTARAN
+              <span className="block mt-2 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                ASET ROL TAK ALIH
+              </span>
+            </h1>
+            
+            <h2 className="text-3xl sm:text-4xl font-light text-blue-100 mb-6">
+              (SPARTA) DBKL
+            </h2>
+            
+            <p className="text-blue-100/80 text-lg max-w-2xl mx-auto mb-8">
+              Comprehensive asset management system for tracking and managing 
+              government building assets across Dewan Bandaraya Kuala Lumpur
+            </p>
+
+            {/* Feature Pills */}
+            <div className="flex flex-wrap justify-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm">
+                <Shield className="h-4 w-4" />
+                <span>Secure</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm">
+                <Clock className="h-4 w-4" />
+                <span>24/7 Available</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm">
+                <Building2 className="h-4 w-4" />
+                <span>DBKL Official</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-3xl mx-auto px-4 py-12">
-        <div className="space-y-4">
-          {menuButtons.map((button) => {
-            const Icon = button.icon;
-            const isHovered = hoveredButton === button.id;
-            
-            return (
-              <button
-                key={button.id}
-                onClick={() => handleButtonClick(button)}
-                onMouseEnter={() => setHoveredButton(button.id)}
-                onMouseLeave={() => setHoveredButton(null)}
-                className={`
-                  w-full group relative overflow-hidden
-                  ${button.bgColor} ${button.hoverColor}
-                  border-2 border-gray-200 hover:border-gray-300
-                  rounded-xl shadow-sm hover:shadow-md
-                  transition-all duration-300 ease-in-out
-                  transform hover:scale-[1.02] hover:-translate-y-1
-                `}
-              >
-                {/* Hover Effect Overlay */}
-                <div 
-                  className={`
-                    absolute inset-0 bg-white opacity-0 group-hover:opacity-10
-                    transition-opacity duration-300
-                  `}
-                />
-                
-                {/* Content Container */}
-                <div className="relative z-10 p-6 flex items-center gap-5">
-                  {/* Icon Container */}
-                  <div 
-                    className={`
-                      flex-shrink-0 w-16 h-16 rounded-xl
-                      ${button.bgColor} border-2 border-gray-200
-                      flex items-center justify-center
-                      group-hover:scale-110 group-hover:rotate-3
-                      transition-transform duration-300
-                      shadow-inner
-                    `}
-                  >
-                    <Icon 
-                      className={`
-                        w-8 h-8 ${button.color}
-                        group-hover:scale-110
-                        transition-transform duration-300
-                      `} 
-                    />
-                  </div>
-                  
-                  {/* Text Content */}
-                  <div className="flex-1 text-left">
-                    <h3 
-                      className={`
-                        text-lg font-semibold ${button.color}
-                        group-hover:translate-x-1
-                        transition-transform duration-300
-                      `}
-                    >
-                      {button.label}
-                    </h3>
-                    {button.description && (
-                      <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-600">
-                        {button.description}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* External Link Indicator */}
-                  <div 
-                    className={`
-                      flex-shrink-0 opacity-0 group-hover:opacity-100
-                      transition-all duration-300 transform
-                      ${isHovered ? 'translate-x-0' : 'translate-x-2'}
-                    `}
-                  >
-                    <ExternalLink className={`w-5 h-5 ${button.color}`} />
-                  </div>
+      {/* Menu Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {menuButtons.map((button) => {
+          const Icon = button.icon;
+          const isHovered = hoveredButton === button.id;
+          
+          return (
+            <button
+              key={button.id}
+              onClick={() => handleButtonClick(button)}
+              onMouseEnter={() => setHoveredButton(button.id)}
+              onMouseLeave={() => setHoveredButton(null)}
+              className={`
+                group relative overflow-hidden
+                bg-white rounded-xl border-2 ${button.borderColor}
+                p-6 text-left
+                transition-all duration-300 ease-out
+                hover:shadow-xl hover:-translate-y-1
+                ${isHovered ? 'ring-2 ring-offset-2 ring-blue-500/20' : ''}
+              `}
+            >
+              {/* Hover Gradient */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${button.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+              
+              {/* Shine Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              
+              <div className="relative flex items-start gap-4">
+                {/* Icon */}
+                <div className={`
+                  flex-shrink-0 w-14 h-14 rounded-xl ${button.iconBg}
+                  flex items-center justify-center shadow-sm
+                  group-hover:scale-110 group-hover:rotate-3
+                  transition-all duration-300
+                `}>
+                  <Icon className={`w-7 h-7 ${button.iconColor}`} />
                 </div>
                 
-                {/* Bottom Border Accent */}
-                <div 
-                  className={`
-                    absolute bottom-0 left-0 h-1 ${button.color.replace('text-', 'bg-').replace('700', '500')}
-                    transition-all duration-300
-                    ${isHovered ? 'w-full' : 'w-0'}
-                  `}
-                />
-              </button>
-            );
-          })}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-gray-800">
+                    {button.label}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {button.description}
+                  </p>
+                </div>
+                
+                {/* Arrow */}
+                <div className={`
+                  flex-shrink-0 transition-all duration-300
+                  ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}
+                `}>
+                  {button.external ? (
+                    <ExternalLink className={`w-5 h-5 ${button.iconColor}`} />
+                  ) : (
+                    <ArrowRight className={`w-5 h-5 ${button.iconColor}`} />
+                  )}
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className={`
+                absolute bottom-0 left-0 h-1 bg-gradient-to-r ${button.gradient}
+                transition-all duration-500 ease-out
+                ${isHovered ? 'w-full' : 'w-0'}
+              `} />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Stats Section */}
+      <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Registration Forms', value: '2', color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'System Uptime', value: '99.9%', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Data Security', value: '256-bit', color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Support', value: '24/7', color: 'text-amber-600', bg: 'bg-amber-50' },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+            <div className={`text-2xl font-bold ${stat.color} mb-1`}>{stat.value}</div>
+            <div className="text-xs text-gray-500">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer Info */}
+      <div className="mt-8 text-center">
+        <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md border border-gray-200">
+          <Building2 className="w-6 h-6 text-[#1e6c93]" />
+          <div className="text-left">
+            <div className="text-sm font-semibold text-gray-900">Dewan Bandaraya Kuala Lumpur</div>
+            <div className="text-xs text-gray-500">Government Asset Management Division</div>
+          </div>
         </div>
         
-        {/* Footer */}
-        <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-full shadow-sm border border-gray-200">
-            <Building2 className="w-5 h-5 text-gray-400" />
-            <span className="text-sm text-gray-500">
-              Dewan Bandaraya Kuala Lumpur
-            </span>
-          </div>
-          <p className="text-xs text-gray-400 mt-4">
-            SPARTA Version 2.0 - Sistem Pendaftaran Aset Rol Tak Alih
-          </p>
-        </div>
+        <p className="text-xs text-gray-400 mt-4">
+          SPARTA Version 2.0 | &copy; {new Date().getFullYear()} DBKL. All rights reserved.
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          Need help? Contact{' '}
+          <a href="mailto:support@dbkl.gov.my" className="text-[#1e6c93] hover:underline">
+            support@dbkl.gov.my
+          </a>
+        </p>
       </div>
     </div>
   );

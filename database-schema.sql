@@ -8,11 +8,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE buildings (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
-  address TEXT NOT NULL,
-  city VARCHAR(100),
-  state VARCHAR(100),
-  postal_code VARCHAR(20),
   description TEXT,
+  floor_count INTEGER DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
@@ -204,10 +201,6 @@ CREATE POLICY "Enable insert access for all users" ON da5_registrations FOR INSE
 CREATE POLICY "Enable update access for all users" ON da5_registrations FOR UPDATE USING (true);
 CREATE POLICY "Enable delete access for all users" ON da5_registrations FOR DELETE USING (true);
 
--- Add floor_count column to buildings table
-ALTER TABLE buildings 
-ADD COLUMN IF NOT EXISTS floor_count INTEGER DEFAULT 1;
-
 -- Create building_floors table
 CREATE TABLE IF NOT EXISTS building_floors (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -273,10 +266,6 @@ CREATE TABLE da6_registrations (
   quantity INTEGER NOT NULL DEFAULT 1,
   measurement_value DECIMAL(10, 2),
   measurement_unit VARCHAR(10) CHECK (measurement_unit IN ('m', 'm2')),
-  
-  -- GPS coordinates
-  latitude DECIMAL(10, 8),
-  longitude DECIMAL(11, 8),
   
   -- Photos and notes
   photos TEXT[],

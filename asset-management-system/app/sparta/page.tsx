@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ClipboardList, FileText, BookOpen, ExternalLink, List, Eye, Filter } from 'lucide-react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { ClipboardList, FileText, BookOpen, ExternalLink, List, Eye, Filter, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { DA5Registration, DA6Registration } from '@/lib/types';
+import ExportButton from '@/components/ExportButton';
 
 // Filter state interface
 interface FilterState {
@@ -21,8 +23,25 @@ interface FilterState {
 }
 
 export default function SpartaPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>}>
+            <SpartaContent />
+        </Suspense>
+    );
+}
+
+function SpartaContent() {
     const [activeTab, setActiveTab] = useState('da5');
+    const searchParams = useSearchParams();
     const supabase = createClient();
+
+    // Set initial tab from URL query parameter
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab === 'da5' || tab === 'da6') {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     // Records section state
     const [da5Records, setDa5Records] = useState<DA5Registration[]>([]);
@@ -49,6 +68,10 @@ export default function SpartaPage() {
         officer: '',
         status: '',
     });
+    
+    // Date range filter state
+    const [dateRange, setDateRange] = useState({ start: '', end: '' });
+    const [da6DateRange, setDa6DateRange] = useState({ start: '', end: '' });
 
     const tabs = [
         { id: 'da5', label: 'DA5', icon: FileText },
@@ -121,8 +144,18 @@ export default function SpartaPage() {
 
     const filteredRecords = da5Records.filter(record => {
         const buildingName = (record.building as any)?.name || '';
+        const recordDate = new Date(record.created_at);
+        
+        // Date range filter
+        const startDate = dateRange.start ? new Date(dateRange.start) : null;
+        const endDate = dateRange.end ? new Date(dateRange.end) : null;
+        
+        const isWithinDateRange = (
+            (!startDate || recordDate >= startDate) &&
+            (!endDate || recordDate <= endDate)
+        );
 
-        return (
+        return isWithinDateRange && (
             (!filters.building || buildingName.toLowerCase().includes(filters.building.toLowerCase())) &&
             (!filters.locationType || record.location_type === filters.locationType) &&
             (!filters.block || (record.block_name || '').toLowerCase().includes(filters.block.toLowerCase())) &&
@@ -140,8 +173,18 @@ export default function SpartaPage() {
     const filteredDA6Records = da6Records.filter(record => {
         const buildingName = (record.building as any)?.name || '';
         const assetName = (record.asset as any)?.name || '';
+        const recordDate = new Date(record.created_at);
+        
+        // Date range filter
+        const startDate = da6DateRange.start ? new Date(da6DateRange.start) : null;
+        const endDate = da6DateRange.end ? new Date(da6DateRange.end) : null;
+        
+        const isWithinDateRange = (
+            (!startDate || recordDate >= startDate) &&
+            (!endDate || recordDate <= endDate)
+        );
 
-        return (
+        return isWithinDateRange && (
             (!da6Filters.building || buildingName.toLowerCase().includes(da6Filters.building.toLowerCase())) &&
             (!da6Filters.asset || assetName.toLowerCase().includes(da6Filters.asset.toLowerCase())) &&
             (!da6Filters.status || record.status === da6Filters.status) &&
@@ -406,6 +449,24 @@ export default function SpartaPage() {
                                                 <option value="submitted">Submitted</option>
                                             </select>
                                         </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">From Date</label>
+                                            <input
+                                                type="date"
+                                                value={dateRange.start}
+                                                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                                                className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">To Date</label>
+                                            <input
+                                                type="date"
+                                                value={dateRange.end}
+                                                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                                                className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -414,14 +475,17 @@ export default function SpartaPage() {
                                     <p className="text-sm text-gray-600">
                                         Showing <span className="font-medium">{filteredRecords.length}</span> of <span className="font-medium">{da5Records.length}</span> records
                                     </p>
-                                    <button
-                                        onClick={loadDA5Records}
-                                        disabled={loadingRecords}
-                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
-                                    >
-                                        {loadingRecords && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-indigo-600 mr-2"></div>}
-                                        Refresh
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <ExportButton data={filteredRecords} filename="da5_records" />
+                                        <button
+                                            onClick={loadDA5Records}
+                                            disabled={loadingRecords}
+                                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                                        >
+                                            {loadingRecords && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-indigo-600 mr-2"></div>}
+                                            Refresh
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Records Table */}
@@ -631,7 +695,7 @@ export default function SpartaPage() {
                                                 onChange={(e) => handleDA6FilterChange('officer', e.target.value)}
                                                 placeholder="Search officer..."
                                                 className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
-                                            />
+                                        />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">Record Status</label>
@@ -645,6 +709,24 @@ export default function SpartaPage() {
                                                 <option value="submitted">Submitted</option>
                                             </select>
                                         </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">From Date</label>
+                                            <input
+                                                type="date"
+                                                value={da6DateRange.start}
+                                                onChange={(e) => setDa6DateRange(prev => ({ ...prev, start: e.target.value }))}
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">To Date</label>
+                                            <input
+                                                type="date"
+                                                value={da6DateRange.end}
+                                                onChange={(e) => setDa6DateRange(prev => ({ ...prev, end: e.target.value }))}
+                                                className="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 px-3 py-2 text-sm"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -653,14 +735,17 @@ export default function SpartaPage() {
                                     <p className="text-sm text-gray-600">
                                         Showing <span className="font-medium">{filteredDA6Records.length}</span> of <span className="font-medium">{da6Records.length}</span> records
                                     </p>
-                                    <button
-                                        onClick={loadDA6Records}
-                                        disabled={loadingRecords}
-                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
-                                    >
-                                        {loadingRecords && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-600 mr-2"></div>}
-                                        Refresh
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <ExportButton data={filteredDA6Records} filename="da6_records" />
+                                        <button
+                                            onClick={loadDA6Records}
+                                            disabled={loadingRecords}
+                                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
+                                        >
+                                            {loadingRecords && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-600 mr-2"></div>}
+                                            Refresh
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Records Table */}

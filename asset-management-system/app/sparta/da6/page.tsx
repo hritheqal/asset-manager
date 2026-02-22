@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client';
 import { Building, DA6Registration, BuildingFloor, Asset } from '@/lib/types';
 import { 
   Building2, 
-  MapPin, 
   Camera, 
   Save, 
   RotateCcw,
@@ -123,7 +122,7 @@ export default function DA6RegistrationPage() {
         .order('name');
       
       if (error) throw error;
-      setAssets(data || []);
+      setAssets((data || []) as Asset[]);
     } catch (error) {
       console.error('Error loading assets:', error);
       setStatus({ type: 'error', message: 'Failed to load assets' });
@@ -194,37 +193,75 @@ export default function DA6RegistrationPage() {
     if (!onBehalfEmail) return;
     
     setCheckingEmail(true);
+    setStatus(null);
     try {
-      // Mock check - in production, verify against your users database
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('name, position')
+        .eq('email', onBehalfEmail.toLowerCase())
+        .single();
+      
+      if (error || !user) {
+        setStatus({ type: 'error', message: 'Email not registered. Please register first.' });
+        setOnBehalfUser(null);
+        return;
+      }
       
       setOnBehalfUser({
         email: onBehalfEmail,
-        name: onBehalfEmail.split('@')[0],
-        position: 'Staff',
+        name: user.name,
+        position: user.position || 'Staff',
         isRegistered: true,
       });
       
       setFormData(prev => ({
         ...prev,
-        on_behalf_email: onBehalfEmail,
-        on_behalf_name: onBehalfEmail.split('@')[0],
-        on_behalf_position: 'Staff',
+        on_behalf_email: onBehalfEmail.toLowerCase(),
+        on_behalf_name: user.name,
+        on_behalf_position: user.position || 'Staff',
       }));
       
       setStatus({ type: 'success', message: 'Email verified successfully' });
     } catch (error) {
       setStatus({ type: 'error', message: 'Failed to verify email' });
+      setOnBehalfUser(null);
     } finally {
       setCheckingEmail(false);
     }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const newPhotos = files.map(file => URL.createObjectURL(file));
-      setUploadedPhotos(prev => [...prev, ...newPhotos]);
+      setStatus({ type: 'info', message: 'Uploading photos...' });
+      
+      try {
+        const uploadedUrls: string[] = [];
+        
+        for (const file of files) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
+          const filePath = `da6-photos/${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('da6-photos')
+            .upload(filePath, file);
+          
+          if (uploadError) throw uploadError;
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('da6-photos')
+            .getPublicUrl(filePath);
+          
+          uploadedUrls.push(publicUrl);
+        }
+        
+        setUploadedPhotos(prev => [...prev, ...uploadedUrls]);
+        setStatus({ type: 'success', message: 'Photos uploaded successfully' });
+      } catch (error: any) {
+        console.error('Error uploading photos:', error);
+        setStatus({ type: 'error', message: 'Failed to upload photos' });
+      }
     }
   };
 
@@ -616,46 +653,6 @@ export default function DA6RegistrationPage() {
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* GPS Location */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <MapPin className="h-6 w-6 text-emerald-600" />
-              <h2 className="text-xl font-semibold text-gray-900">GPS Location</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Latitude
-                </label>
-                <input
-                  type="number"
-                  step="0.00000001"
-                  value={formData.latitude || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, latitude: parseFloat(e.target.value) || undefined }))}
-                  placeholder="e.g., 3.1390"
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Longitude
-                </label>
-                <input
-                  type="number"
-                  step="0.00000001"
-                  value={formData.longitude || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, longitude: parseFloat(e.target.value) || undefined }))}
-                  placeholder="e.g., 101.6869"
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                />
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">
-              Optional: Enter GPS coordinates for precise location tracking
-            </p>
           </div>
 
           {/* Photos */}
