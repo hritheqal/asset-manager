@@ -47,8 +47,8 @@ export default function LoginPage() {
       }
       
       if (data.user) {
-        // Redirect to dashboard after successful login
-        router.push('/');
+        // Redirect to Spartav2 after successful login
+        router.push('/spartav2');
         router.refresh();
       }
     } catch (err: any) {

@@ -1,3 +1,24 @@
+export type UserRole = 'superadmin' | 'user';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  position?: string;
+  role: UserRole;
+  created_at?: string;
+}
+
+export interface DBKLZone {
+  id: string;
+  zone_id: string;
+  zone_name: string;
+  boundary_polygon: any;
+  center_lat?: number;
+  center_lng?: number;
+  created_at?: string;
+}
+
 export type AssetStatus = 'active' | 'maintenance' | 'retired' | 'disposed';
 export type AssetCondition = 'excellent' | 'good' | 'fair' | 'poor';
 
@@ -11,10 +32,6 @@ export interface AssetCategory {
 export interface Building {
   id: string;
   name: string;
-  address: string;
-  city: string;
-  state: string;
-  postal_code: string;
   description?: string;
   floor_count?: number;
   created_at?: string;
@@ -83,7 +100,7 @@ export interface MaintenanceLog {
   created_at?: string;
 }
 
-export type LocationType = 'BLOCK' | 'EXTERNAL';
+export type LocationType = 'BLOCK' | 'OUTDOOR';
 export type DA5Status = 'draft' | 'submitted';
 
 export interface Officer {
@@ -150,4 +167,71 @@ export interface FinishType {
   category: 'floor' | 'ceiling' | 'wall';
   name: string;
   created_at?: string;
+}
+
+export type DA6Status = 'draft' | 'submitted';
+export type EquipmentStatus = 'Active' | 'Damaged' | 'Inactive';
+
+export interface DA6Registration {
+  id: string;
+  building_id: string;
+  floor_id?: string;
+  asset_id?: string;
+  
+  // Filler info
+  filled_by_user_id: string;
+  filled_by_name: string;
+  filled_by_position: string;
+  
+  // On-behalf registration
+  is_on_behalf: boolean;
+  on_behalf_email?: string;
+  on_behalf_name?: string;
+  on_behalf_position?: string;
+  
+  // Authorizing officer
+  officer_id: string;
+  officer_name: string;
+  officer_position: string;
+  
+  // Equipment details
+  status: EquipmentStatus;
+  quantity: number;
+  measurement_value?: number;
+  measurement_unit?: 'm' | 'm2';
+  
+  // Photos and notes
+  photos?: string[];
+  notes?: string;
+  
+  // Status
+  status_record: DA6Status;
+  created_at?: string;
+  updated_at?: string;
+  
+  // Relations
+  building?: Building;
+  floor?: BuildingFloor;
+  asset?: Asset;
+}
+  measurement_unit?: 'm' | 'm2';
+  
+  // GPS coordinates
+  latitude?: number;
+  longitude?: number;
+  
+  // Photos and notes
+  photos?: string[];
+  notes?: string;
+  
+  // Status
+  status_record: DA6Status;
+  created_at?: string;
+  updated_at?: string;
+  
+  // Relations
+  building?: Building;
+  floor?: BuildingFloor;
+  asset?: Asset;
+
 }

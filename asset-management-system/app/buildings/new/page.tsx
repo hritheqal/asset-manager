@@ -1,29 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, X, ChevronDown, Search } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-
-// DBKL Zones list
-const DBKL_ZONES = [
-  { id: 'zone-a', name: 'Zone A - KL' },
-  { id: 'zone-b', name: 'Zone B - Cheras' },
-  { id: 'zone-c', name: 'Zone C - Kepong' },
-  { id: 'zone-d', name: 'Zone D - Lembah Pantai' },
-  { id: 'zone-e', name: 'Zone E - Segambut' },
-  { id: 'zone-f', name: 'Zone F - TTDI' },
-  { id: 'zone-g', name: 'Zone G - Setapak' },
-  { id: 'zone-h', name: 'Zone H - Wangsa Maju' },
-  { id: 'zone-i', name: 'Zone I - Bandar Tun Razak' },
-  { id: 'zone-j', name: 'Zone J - Bukit Jalil' },
-  { id: 'zone-k', name: 'Zone K - Seputeh' },
-  { id: 'zone-l', name: 'Zone L - Taman Desa' },
-  { id: 'zone-m', name: 'Zone M - Taman Connaught' },
-  { id: 'zone-n', name: 'Zone N - Bandar Menjalara' },
-  { id: 'zone-o', name: 'Zone O - Sri Hartamas' },
-]
 
 export default function NewBuildingPage() {
   const router = useRouter()
@@ -31,25 +12,11 @@ export default function NewBuildingPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  // Building type state
+  const [buildingType, setBuildingType] = useState<'block' | 'outdoor'>('block')
+  
   // Floor count state (0-70)
   const [floorCount, setFloorCount] = useState(0)
-  
-  // Zone state (single select)
-  const [selectedZone, setSelectedZone] = useState<string>('')
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const handleFloorChange = (increment: number) => {
     const newValue = floorCount + increment
@@ -58,48 +25,20 @@ export default function NewBuildingPage() {
     }
   }
 
-  const selectZone = (zoneId: string) => {
-    setSelectedZone(zoneId)
-    setIsDropdownOpen(false)
-    setSearchQuery('')
-  }
-
-  const clearZone = () => {
-    setSelectedZone('')
-  }
-
-  const filteredZones = DBKL_ZONES.filter(zone =>
-    zone.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const getZoneName = (zoneId: string) => {
-    return DBKL_ZONES.find(z => z.id === zoneId)?.name || zoneId
-  }
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-    
-    // Validate zone
-    if (!selectedZone) {
-      setError('Please select a zone')
-      setLoading(false)
-      return
-    }
 
     try {
       // 1. Create building
       const buildingData = {
         name: formData.get('name') as string,
-        address: formData.get('address') as string,
-        city: formData.get('city') as string || null,
-        state: formData.get('state') as string || null,
-        postal_code: formData.get('postal_code') as string || null,
         description: formData.get('description') as string || null,
         floor_count: floorCount,
+        building_type: buildingType,
       }
 
       const { data: building, error: buildingError } = await supabase
@@ -111,7 +50,6 @@ export default function NewBuildingPage() {
       if (buildingError) throw buildingError
 
       // 2. Create floors (0 to floorCount, inclusive of Ground Floor)
-      // floorCount=0 creates Ground Floor only, floorCount=1 creates Ground+1, etc.
       const floorsData = []
       for (let i = 0; i <= floorCount; i++) {
         floorsData.push({
@@ -128,18 +66,6 @@ export default function NewBuildingPage() {
         
         if (floorsError) throw floorsError
       }
-
-      // 3. Create block/zone
-      const blocksData = [{
-        building_id: building.id,
-        block_name: getZoneName(selectedZone),
-      }]
-
-      const { error: blocksError } = await supabase
-        .from('building_blocks')
-        .insert(blocksData)
-      
-      if (blocksError) throw blocksError
 
       setLoading(false)
       router.push(`/buildings/${building.id}`)
@@ -207,62 +133,41 @@ export default function NewBuildingPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Address */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Address</h2>
-            <div className="space-y-6">
+              {/* Building Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Street Address <span className="text-red-500">*</span>
+                  Building Type <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="address"
-                  required
-                  placeholder="123 Main Street"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City
+                <div className="flex gap-6">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="building_type"
+                      value="block"
+                      checked={buildingType === 'block'}
+                      onChange={() => setBuildingType('block')}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-gray-700">Block</span>
                   </label>
-                  <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State / Province
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="building_type"
+                      value="outdoor"
+                      checked={buildingType === 'outdoor'}
+                      onChange={() => setBuildingType('outdoor')}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-gray-700">Outdoor Structures</span>
                   </label>
-                  <input
-                    type="text"
-                    name="state"
-                    placeholder="State"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                  />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    name="postal_code"
-                    placeholder="12345"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {buildingType === 'block' 
+                    ? 'For buildings, cafes, kiosks, and similar structures'
+                    : 'For outdoor structures like landscape, fencing, walkways, bus stops'}
+                </p>
               </div>
             </div>
           </div>
@@ -306,94 +211,6 @@ export default function NewBuildingPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                   Will create: {floorCount === 0 ? 'Ground Floor' : `Ground Floor, ${Array.from({length: Math.min(floorCount - 1, 5)}, (_, i) => i + 1).join(', ')}${floorCount > 6 ? ', ...' : ''}`}
-                </p>
-              </div>
-
-              {/* Zone Dropdown */}
-              <div ref={dropdownRef}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Zone <span className="text-red-500">*</span>
-                </label>
-                
-                {/* Selected Zone Chip */}
-                {selectedZone && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800"
-                    >
-                      {getZoneName(selectedZone)}
-                      <button
-                        type="button"
-                        onClick={() => clearZone()}
-                        className="ml-2 text-indigo-600 hover:text-indigo-900"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </span>
-                  </div>
-                )}
-
-                {/* Dropdown */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-left flex items-center justify-between"
-                  >
-                    <span className={!selectedZone ? 'text-gray-400' : 'text-gray-900'}>
-                      {!selectedZone 
-                        ? 'Select zone...' 
-                        : getZoneName(selectedZone)
-                      }
-                    </span>
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
-                  </button>
-
-                  {isDropdownOpen && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      {/* Search Input */}
-                      <div className="sticky top-0 bg-white p-2 border-b border-gray-200">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search zones..."
-                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-
-                      {/* Zone Options */}
-                      <div className="p-2">
-                        {filteredZones.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-4">
-                            No zones found
-                          </p>
-                        ) : (
-                          filteredZones.map(zone => (
-                            <button
-                              key={zone.id}
-                              type="button"
-                              onClick={() => selectZone(zone.id)}
-                              className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 ${
-                                selectedZone === zone.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'
-                              }`}
-                            >
-                              <span className="text-sm">
-                                {zone.name}
-                              </span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Select one DBKL zone for this building
                 </p>
               </div>
             </div>

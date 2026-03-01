@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Edit, Building2, MapPin, Package } from 'lucide-react'
+import { ArrowLeft, Edit, Building2, Package } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface BuildingPageProps {
@@ -60,8 +60,8 @@ export default async function BuildingPage({ params }: BuildingPageProps) {
               <Building2 className="h-10 w-10 text-indigo-600 mr-4" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">{building.name}</h1>
-                {building.address && (
-                  <p className="mt-1 text-sm text-gray-500">{building.address}</p>
+                {building.description && (
+                  <p className="mt-1 text-sm text-gray-500">{building.description}</p>
                 )}
               </div>
             </div>
@@ -80,24 +80,6 @@ export default async function BuildingPage({ params }: BuildingPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Address */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MapPin className="h-5 w-5 mr-2" />
-                Address
-              </h3>
-              <div className="space-y-2 text-sm">
-                {building.address && <p className="text-gray-700">{building.address}</p>}
-                {(building.city || building.state || building.postal_code) && (
-                  <p className="text-gray-700">
-                    {building.city}
-                    {building.city && (building.state || building.postal_code) && ', '}
-                    {building.state} {building.postal_code}
-                  </p>
-                )}
-              </div>
-            </div>
-
             {/* Description */}
             {building.description && (
               <div className="bg-white rounded-lg shadow p-6">

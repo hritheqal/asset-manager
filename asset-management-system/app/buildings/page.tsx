@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Building2, Plus, MapPin } from 'lucide-react'
+import { Building2, Plus } from 'lucide-react'
+import ExportButton from '@/components/ExportButton'
 
 export default async function BuildingsPage() {
   const supabase = await createClient()
@@ -23,13 +24,16 @@ export default async function BuildingsPage() {
                 {buildings?.length || 0} total buildings
               </p>
             </div>
-            <Link
-              href="/buildings/new"
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Building
-            </Link>
+            <div className="flex gap-3">
+              <ExportButton data={buildings || []} filename="buildings" />
+              <Link
+                href="/buildings/new"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Building
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -73,25 +77,14 @@ export default async function BuildingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    {building.address && (
-                      <div className="flex items-start text-sm text-gray-600">
-                        <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-gray-400" />
-                        <div>
-                          <p>{building.address}</p>
-                          {(building.city || building.state) && (
-                            <p>
-                              {building.city}
-                              {building.city && building.state && ', '}
-                              {building.state} {building.postal_code}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
                     {building.description && (
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {building.description}
+                      </p>
+                    )}
+                    {building.floor_count !== undefined && building.floor_count !== null && (
+                      <p className="text-sm text-gray-500">
+                        {building.floor_count} floor(s)
                       </p>
                     )}
                   </div>
