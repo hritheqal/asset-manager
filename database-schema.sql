@@ -8,11 +8,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE buildings (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
-  address TEXT NOT NULL,
-  city VARCHAR(100),
-  state VARCHAR(100),
-  postal_code VARCHAR(20),
   description TEXT,
+  floor_count INTEGER DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
@@ -203,3 +200,101 @@ CREATE POLICY "Enable read access for all users" ON da5_registrations FOR SELECT
 CREATE POLICY "Enable insert access for all users" ON da5_registrations FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update access for all users" ON da5_registrations FOR UPDATE USING (true);
 CREATE POLICY "Enable delete access for all users" ON da5_registrations FOR DELETE USING (true);
+
+-- Create building_floors table
+CREATE TABLE IF NOT EXISTS building_floors (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    building_id UUID REFERENCES buildings(id) ON DELETE CASCADE,
+    floor_number INTEGER NOT NULL,
+    floor_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create building_blocks table
+CREATE TABLE IF NOT EXISTS building_blocks (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    building_id UUID REFERENCES buildings(id) ON DELETE CASCADE,
+    block_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for building_floors and building_blocks
+CREATE INDEX IF NOT EXISTS idx_building_floors_building ON building_floors(building_id);
+CREATE INDEX IF NOT EXISTS idx_building_blocks_building ON building_blocks(building_id);
+CREATE INDEX IF NOT EXISTS idx_building_floors_number ON building_floors(floor_number);
+
+-- Enable Row Level Security for building_floors and building_blocks
+ALTER TABLE building_floors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE building_blocks ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for building_floors and building_blocks
+CREATE POLICY "Enable read access for all users" ON building_floors FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON building_floors FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON building_floors FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON building_floors FOR DELETE USING (true);
+
+CREATE POLICY "Enable read access for all users" ON building_blocks FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON building_blocks FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON building_blocks FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON building_blocks FOR DELETE USING (true);
+
+-- Create da6_registrations table (Equipment Registration)
+CREATE TABLE da6_registrations (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  building_id UUID REFERENCES buildings(id) ON DELETE CASCADE,
+  floor_id UUID REFERENCES building_floors(id) ON DELETE SET NULL,
+  asset_id UUID REFERENCES assets(id) ON DELETE SET NULL,
+  
+  -- Filler info
+  filled_by_user_id UUID NOT NULL,
+  filled_by_name VARCHAR(255) NOT NULL,
+  filled_by_position VARCHAR(255) NOT NULL,
+  
+  -- On-behalf registration
+  is_on_behalf BOOLEAN DEFAULT FALSE,
+  on_behalf_email VARCHAR(255),
+  on_behalf_name VARCHAR(255),
+  on_behalf_position VARCHAR(255),
+  
+  -- Authorizing officer
+  officer_id UUID,
+  officer_name VARCHAR(255) NOT NULL,
+  officer_position VARCHAR(255) NOT NULL,
+  
+  -- Equipment details
+  status VARCHAR(50) CHECK (status IN ('Active', 'Damaged', 'Inactive')),
+  quantity INTEGER NOT NULL DEFAULT 1,
+  measurement_value DECIMAL(10, 2),
+  measurement_unit VARCHAR(10) CHECK (measurement_unit IN ('m', 'm2')),
+  
+  -- Photos and notes
+  photos TEXT[],
+  notes TEXT,
+  
+  -- Status
+  status_record VARCHAR(50) DEFAULT 'draft' CHECK (status_record IN ('draft', 'submitted')),
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- Create indexes for da6_registrations
+CREATE INDEX idx_da6_registrations_building_id ON da6_registrations(building_id);
+CREATE INDEX idx_da6_registrations_floor_id ON da6_registrations(floor_id);
+CREATE INDEX idx_da6_registrations_asset_id ON da6_registrations(asset_id);
+CREATE INDEX idx_da6_registrations_filled_by_user_id ON da6_registrations(filled_by_user_id);
+CREATE INDEX idx_da6_registrations_status_record ON da6_registrations(status_record);
+CREATE INDEX idx_da6_registrations_created_at ON da6_registrations(created_at);
+
+-- Apply trigger to da6_registrations
+CREATE TRIGGER update_da6_registrations_updated_at BEFORE UPDATE ON da6_registrations
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security for da6_registrations
+ALTER TABLE da6_registrations ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for da6_registrations
+CREATE POLICY "Enable read access for all users" ON da6_registrations FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON da6_registrations FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON da6_registrations FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON da6_registrations FOR DELETE USING (true);

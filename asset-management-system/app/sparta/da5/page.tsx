@@ -4,7 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Building, DA5Registration, LocationType, FinishType, BuildingFloor, BuildingBlock } from '@/lib/types';
+import { Building, DA5Registration, FinishType, BuildingFloor } from '@/lib/types';
+import dynamic from 'next/dynamic';
+
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
+  ssr: false,
+  loading: () => <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center"><p className="text-gray-500">Loading map...</p></div>
+});
 import { 
   Building2, 
   MapPin, 
@@ -16,7 +22,8 @@ import {
   X,
   ExternalLink,
   User,
-  Shield
+  Shield,
+  Navigation
 } from 'lucide-react';
 
 // Mock finish types - in production, fetch from Supabase
@@ -69,8 +76,10 @@ export default function DA5RegistrationPage() {
   
   // Building-specific data
   const [selectedBuildingFloors, setSelectedBuildingFloors] = useState<BuildingFloor[]>([]);
-  const [selectedBuildingBlocks, setSelectedBuildingBlocks] = useState<BuildingBlock[]>([]);
   const [loadingBuildingData, setLoadingBuildingData] = useState(false);
+  
+  // Filter buildings by type
+  const [locationType, setLocationType] = useState<'BLOCK' | 'OUTDOOR'>('BLOCK');
   
   // On-behalf state
   const [isOnBehalf, setIsOnBehalf] = useState(false);
@@ -84,6 +93,9 @@ export default function DA5RegistrationPage() {
     status: 'draft',
     is_on_behalf: false,
   });
+  
+  // Detected zone state (auto-filled from map click)
+  const [detectedZone, setDetectedZone] = useState<{ zoneId: string; zoneName: string } | null>(null);
   
   // User info (current logged-in user)
   const [currentUser, setCurrentUser] = useState({
@@ -99,21 +111,37 @@ export default function DA5RegistrationPage() {
     loadCurrentUser();
   }, []);
 
+  // Sync locationType with formData
+  useEffect(() => {
+    if (formData.location_type) {
+      setLocationType(formData.location_type as 'BLOCK' | 'OUTDOOR');
+    }
+  }, [formData.location_type]);
+
+  // Reload buildings when location type changes
+  useEffect(() => {
+    loadBuildings();
+    // Reset selected building when type changes
+    setFormData(prev => ({ ...prev, building_id: undefined }));
+    setSelectedBuildingFloors([]);
+  }, [locationType]);
+
   // Load building floors and blocks when building is selected
   useEffect(() => {
     if (formData.building_id) {
       loadBuildingData(formData.building_id);
     } else {
       setSelectedBuildingFloors([]);
-      setSelectedBuildingBlocks([]);
     }
   }, [formData.building_id]);
 
   const loadBuildings = async () => {
     try {
+      const buildingTypeFilter = locationType === 'BLOCK' ? 'block' : 'outdoor';
       const { data, error } = await supabase
         .from('buildings')
         .select('*')
+        .eq('building_type', buildingTypeFilter)
         .order('name');
       
       if (error) throw error;
@@ -138,19 +166,9 @@ export default function DA5RegistrationPage() {
       
       if (floorsError) throw floorsError;
       setSelectedBuildingFloors(floors || []);
-
-      // Load blocks
-      const { data: blocks, error: blocksError } = await supabase
-        .from('building_blocks')
-        .select('*')
-        .eq('building_id', buildingId)
-        .order('block_name');
-      
-      if (blocksError) throw blocksError;
-      setSelectedBuildingBlocks(blocks || []);
     } catch (error) {
       console.error('Error loading building data:', error);
-      setStatus({ type: 'error', message: 'Failed to load building floors and blocks' });
+      setStatus({ type: 'error', message: 'Failed to load building floors' });
     } finally {
       setLoadingBuildingData(false);
     }
@@ -328,6 +346,20 @@ export default function DA5RegistrationPage() {
     );
   };
 
+  const handleMapLocationChange = (lat: number, lng: number) => {
+    if (lat === 0 && lng === 0) {
+      setFormData(prev => ({ ...prev, latitude: undefined, longitude: undefined }));
+      setDetectedZone(null);
+    } else {
+      setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+    }
+  };
+
+  const handleZoneDetect = async (zoneId: string, zoneName: string) => {
+    setDetectedZone({ zoneId, zoneName });
+    setStatus({ type: 'success', message: `Zone detected: ${zoneName}` });
+  };
+
   const validateForm = (): boolean => {
     const errors: string[] = [];
 
@@ -350,17 +382,14 @@ export default function DA5RegistrationPage() {
     if (!formData.building_id) errors.push('Please select a building');
 
     // Location-specific validation
-    if (formData.location_type === 'EXTERNAL') {
+    if (formData.location_type === 'OUTDOOR') {
       if (!formData.external_building_name) {
-        errors.push('Please provide the external building name');
+        errors.push('Please provide the outdoor structure name');
       }
     } else {
-      // BLOCK type - only require floor/block if options are available
+      // BLOCK type - only require floor if options are available
       if (selectedBuildingFloors.length > 0 && !formData.floor) {
         errors.push('Please select a floor');
-      }
-      if (selectedBuildingBlocks.length > 0 && !formData.block_name) {
-        errors.push('Please select a block');
       }
     }
 
@@ -415,11 +444,11 @@ export default function DA5RegistrationPage() {
       filled_by_name: currentUser.name,
       filled_by_position: currentUser.position,
     });
+    setLocationType('BLOCK');
     setIsOnBehalf(false);
     setOnBehalfEmail('');
     setOnBehalfUser(null);
     setSelectedBuildingFloors([]);
-    setSelectedBuildingBlocks([]);
     setUploadedPhotos([]);
     setStatus(null);
   };
@@ -665,8 +694,11 @@ export default function DA5RegistrationPage() {
                       type="radio"
                       name="location_type"
                       value="BLOCK"
-                      checked={formData.location_type === 'BLOCK'}
-                      onChange={(e) => handleInputChange('location_type', e.target.value as LocationType)}
+                      checked={locationType === 'BLOCK'}
+                      onChange={(e) => {
+                        setLocationType('BLOCK');
+                        handleInputChange('location_type', 'BLOCK');
+                      }}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                     />
                     <span className="ml-2 text-gray-700">Block</span>
@@ -675,27 +707,30 @@ export default function DA5RegistrationPage() {
                     <input
                       type="radio"
                       name="location_type"
-                      value="EXTERNAL"
-                      checked={formData.location_type === 'EXTERNAL'}
-                      onChange={(e) => handleInputChange('location_type', e.target.value as LocationType)}
+                      value="OUTDOOR"
+                      checked={locationType === 'OUTDOOR'}
+                      onChange={(e) => {
+                        setLocationType('OUTDOOR');
+                        handleInputChange('location_type', 'OUTDOOR');
+                      }}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                     />
-                    <span className="ml-2 text-gray-700">External Building</span>
+                    <span className="ml-2 text-gray-700">Outdoor Structures</span>
                   </label>
                 </div>
               </div>
 
-              {/* External Building Name - only shown when EXTERNAL is selected */}
-              {formData.location_type === 'EXTERNAL' && (
+              {/* Outdoor Structure Name - only shown when OUTDOOR is selected */}
+              {formData.location_type === 'OUTDOOR' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    External Building Name <span className="text-red-500">*</span>
+                    Outdoor Structure Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.external_building_name || ''}
                     onChange={(e) => handleInputChange('external_building_name', e.target.value)}
-                    placeholder="Enter external building name"
+                    placeholder="Enter outdoor structure name"
                     className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
                   />
                 </div>
@@ -752,46 +787,7 @@ export default function DA5RegistrationPage() {
                 </div>
               )}
 
-              {/* Block Selection */}
-              {formData.building_id && selectedBuildingBlocks.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Block / Zone <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formData.block_name || ''}
-                    onChange={(e) => handleInputChange('block_name', e.target.value)}
-                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
-                  >
-                    <option value="">-- Select Block --</option>
-                    {selectedBuildingBlocks.map((block) => (
-                      <option key={block.id} value={block.block_name}>
-                        {block.block_name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Blocks defined for this building
-                  </p>
-                </div>
-              )}
 
-              {/* No data message */}
-              {formData.building_id && !loadingBuildingData && selectedBuildingFloors.length === 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    No floors defined for this building. Please contact administrator.
-                  </p>
-                </div>
-              )}
-
-              {formData.building_id && !loadingBuildingData && selectedBuildingBlocks.length === 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    No blocks defined for this building. Please contact administrator.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
@@ -890,43 +886,32 @@ export default function DA5RegistrationPage() {
             </div>
           </div>
 
-          {/* Section 5: GPS Coordinates */}
+          {/* Section 5: GPS Location */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="bg-indigo-600 px-6 py-4">
               <h2 className="text-lg font-semibold text-white flex items-center">
                 <MapPin className="h-5 w-5 mr-2" />
-                5. GPS Coordinates
+                5. GPS Location
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
-                  <input
-                    type="text"
-                    value={formData.latitude || ''}
-                    onChange={(e) => handleInputChange('latitude', e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                    placeholder="e.g., 3.139000"
-                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-                  <input
-                    type="text"
-                    value={formData.longitude || ''}
-                    onChange={(e) => handleInputChange('longitude', e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                    placeholder="e.g., 101.686900"
-                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2"
-                  />
-                </div>
-              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Select location on the map or use the current location button to capture GPS coordinates.
+              </p>
+              
+              <MapPicker
+                latitude={formData.latitude ?? null}
+                longitude={formData.longitude ?? null}
+                onLocationChange={handleMapLocationChange}
+                onZoneDetect={handleZoneDetect}
+              />
+
               <button
                 type="button"
                 onClick={getCurrentLocation}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
-                <MapPin className="h-4 w-4 mr-2" />
+                <Navigation className="h-4 w-4 mr-2" />
                 Get Current Location
               </button>
               {(formData.latitude && formData.longitude) && (
@@ -934,6 +919,18 @@ export default function DA5RegistrationPage() {
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Location captured: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
                 </p>
+              )}
+              
+              {/* Detected Zone Display */}
+              {detectedZone && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-indigo-800">
+                    Detected Zone: {detectedZone.zoneName}
+                  </p>
+                  <p className="text-xs text-indigo-600 mt-1">
+                    Zone will be automatically saved with this registration
+                  </p>
+                </div>
               )}
             </div>
           </div>

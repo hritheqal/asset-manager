@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Package, Plus, Search, Building2, Tag } from 'lucide-react'
 import { Asset, AssetCategory, Building } from '@/lib/types'
+import ExportButton from '@/components/ExportButton'
 
 interface AssetsPageProps {
   searchParams: Promise<{
@@ -66,13 +67,16 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
                 {assets?.length || 0} total assets
               </p>
             </div>
-            <Link
-              href="/assets/new"
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Asset
-            </Link>
+            <div className="flex gap-3">
+              <ExportButton data={assets || []} filename="assets" />
+              <Link
+                href="/assets/new"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Asset
+              </Link>
+            </div>
           </div>
         </div>
       </div>
