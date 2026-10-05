@@ -75,7 +75,7 @@ function LocationMarker({ lat, lng, onLocationChange, onZoneDetect }: {
           .single();
         
         if (zoneData) {
-          onZoneDetect(data, zoneData.zone_name);
+          onZoneDetect?.(data, zoneData.zone_name);
         }
       }
     } catch (err) {

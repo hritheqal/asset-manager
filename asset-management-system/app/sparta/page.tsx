@@ -144,15 +144,15 @@ function SpartaContent() {
 
     const filteredRecords = da5Records.filter(record => {
         const buildingName = (record.building as any)?.name || '';
-        const recordDate = new Date(record.created_at);
+        const recordDate = record.created_at ? new Date(record.created_at) : null;
         
         // Date range filter
         const startDate = dateRange.start ? new Date(dateRange.start) : null;
         const endDate = dateRange.end ? new Date(dateRange.end) : null;
         
         const isWithinDateRange = (
-            (!startDate || recordDate >= startDate) &&
-            (!endDate || recordDate <= endDate)
+            (!startDate || (recordDate !== null && recordDate >= startDate)) &&
+            (!endDate || (recordDate !== null && recordDate <= endDate))
         );
 
         return isWithinDateRange && (
@@ -173,15 +173,15 @@ function SpartaContent() {
     const filteredDA6Records = da6Records.filter(record => {
         const buildingName = (record.building as any)?.name || '';
         const assetName = (record.asset as any)?.name || '';
-        const recordDate = new Date(record.created_at);
+        const recordDate = record.created_at ? new Date(record.created_at) : null;
         
         // Date range filter
         const startDate = da6DateRange.start ? new Date(da6DateRange.start) : null;
         const endDate = da6DateRange.end ? new Date(da6DateRange.end) : null;
         
         const isWithinDateRange = (
-            (!startDate || recordDate >= startDate) &&
-            (!endDate || recordDate <= endDate)
+            (!startDate || (recordDate !== null && recordDate >= startDate)) &&
+            (!endDate || (recordDate !== null && recordDate <= endDate))
         );
 
         return isWithinDateRange && (

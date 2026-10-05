@@ -32,9 +32,15 @@ export interface AssetCategory {
 export interface Building {
   id: string;
   name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
   description?: string;
   floor_count?: number;
+  building_type?: 'block' | 'outdoor';
   created_at?: string;
+  updated_at?: string;
   
   // Relations
   floors?: BuildingFloor[];
@@ -199,23 +205,7 @@ export interface DA6Registration {
   quantity: number;
   measurement_value?: number;
   measurement_unit?: 'm' | 'm2';
-  
-  // Photos and notes
-  photos?: string[];
-  notes?: string;
-  
-  // Status
-  status_record: DA6Status;
-  created_at?: string;
-  updated_at?: string;
-  
-  // Relations
-  building?: Building;
-  floor?: BuildingFloor;
-  asset?: Asset;
-}
-  measurement_unit?: 'm' | 'm2';
-  
+
   // GPS coordinates
   latitude?: number;
   longitude?: number;
@@ -233,5 +223,4 @@ export interface DA6Registration {
   building?: Building;
   floor?: BuildingFloor;
   asset?: Asset;
-
 }

@@ -19,6 +19,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const getFriendlyError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err || '');
+
+    if (message.includes('Failed to fetch')) {
+      return 'Cannot reach Supabase. Check your internet connection, Supabase project URL, and Auth URL settings, then try again.';
+    }
+
+    return message || 'Failed to sign in. Please try again.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -33,7 +43,7 @@ export default function LoginPage() {
     
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
       
@@ -51,8 +61,8 @@ export default function LoginPage() {
         router.push('/spartav2');
         router.refresh();
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please try again.');
+    } catch (err) {
+      setError(getFriendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -148,9 +158,9 @@ export default function LoginPage() {
               </div>
 
               <div className="text-sm">
-                <span className="font-medium text-indigo-600">
+                <Link href="/auth/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
                   Forgot your password?
-                </span>
+                </Link>
               </div>
             </div>
 
@@ -179,7 +189,7 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  Don't have an account?
+                  Don&apos;t have an account?
                 </span>
               </div>
             </div>
